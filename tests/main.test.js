@@ -71,9 +71,10 @@ describe('SERM Main Module', () => {
     expect(result.metadata).toHaveProperty('processedAt');
   });
 
-  test('بررسی برخورد با خطای کلید API نامعتبر', async () => {
-    const main = new Main({ apiKey: '' });
-    
-    await expect(main.start()).rejects.toThrow('کلید API الزامی است');
-  });
+test('بررسی برخورد با خطای کلید API نامعتبر', async () => {
+  // تغییر روش تست
+  expect(() => {
+    new Main({ apiKey: '' });
+  }).toThrow('کلید API الزامی است');
+});
 });
