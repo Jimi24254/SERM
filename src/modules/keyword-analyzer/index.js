@@ -53,9 +53,12 @@ class KeywordAnalyzer {
   }
 
   async callAI(prompt) {
+    // آدرس API به نقطه پایانی صحیح avalai.ir اصلاح شد
+    const url = 'https://api.avalai.ir/v1/chat/completions';
+
     try {
-      const response = await axios.post('https://api.first-ai.com/v1/chat/completions', {
-        model: 'gemini-pro-2.5',
+      const response = await axios.post(url, {
+        model: 'gemini-1.5-pro-latest', // استفاده از یک مدل رایج و قدرتمند
         messages: [
           {
             role: 'user',
@@ -63,7 +66,7 @@ class KeywordAnalyzer {
           }
         ],
         temperature: 0.3,
-        max_tokens: 2000
+        max_tokens: 4096 // افزایش ظرفیت برای پاسخ‌های کامل‌تر
       }, {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
@@ -73,7 +76,7 @@ class KeywordAnalyzer {
 
       return response.data.choices[0].message.content;
     } catch (error) {
-      console.error('خطا در فراخوانی API:', error);
+      console.error('خطا در فراخوانی API:', error.response ? error.response.data : error.message);
       throw error;
     }
   }

@@ -11,6 +11,7 @@ class ContentGenerator {
   async generateContentGuide(topic, keywords, competitors) {
     try {
       // تولید راهنمای جامع محتوا
+      const competitorsList = competitors.list || competitors.competitors || []; // سازگاری با هر دو ساختار
       const contentPrompt = `
 تو یک متخصص تولید محتوای سئو و استراتژیست محتوا هستی. برای موضوع "${topic}" با در نظر گیری:
 
@@ -18,7 +19,7 @@ class ContentGenerator {
 کلمات کلیدی فرعی: ${keywords.secondaryKeywords?.map(k => k.keyword || k).join(', ')}
 
 تحلیل رقبا نشان می‌دهد:
-${competitors.competitors?.map(c => `- ${c.name}: قوت‌ها: ${c.strengths?.join(', ')}, ضعف‌ها: ${c.weaknesses?.join(', ')}`).join('\n')}
+${competitorsList.map(c => `- ${c.name}: قوت‌ها: ${c.strengths?.join(', ')}, ضعف‌ها: ${c.weaknesses?.join(', ')}`).join('\n')}
 
 یک راهنمای کامل تولید محتوا ایجاد کن که شامل:
 
@@ -94,7 +95,6 @@ ${competitors.competitors?.map(c => `- ${c.name}: قوت‌ها: ${c.strengths?.
         "suggestions": ["پیشنهادات ویدئو"],
         "placement": "جایگذاری ویدئو"
       },
-      "infographics": ["پیشنهادات اینفوگرافیک"],
       "tables": ["جداول پیشنهادی"],
       "lists": ["لیست‌های پیشنهادی"]
     },
@@ -130,8 +130,8 @@ ${competitors.competitors?.map(c => `- ${c.name}: قوت‌ها: ${c.strengths?.
       const response = await this.callAI(contentPrompt);
       const contentGuide = JSON.parse(response);
 
-      // تولید پرامپت نهایی برای Gemini Pro 2.5
-      const finalPrompt = await this.generateFinalPrompt(contentGuide, topic, keywords, competitors);
+      // تولید پرامپت نهایی برای Gemini
+      const finalPrompt = await this.generateFinalPrompt(contentGuide, topic, keywords);
 
       return {
         contentGuide,
@@ -146,51 +146,62 @@ ${competitors.competitors?.map(c => `- ${c.name}: قوت‌ها: ${c.strengths?.
     }
   }
 
-  async generateFinalPrompt(contentGuide, topic, keywords, competitors) {
+  async generateFinalPrompt(contentGuide, topic, keywords) {
     try {
-      const promptGenerationPrompt = `
-بر اساس راهنمای محتوای ارائه شده، یک پرامپت کامل و دقیق برای Gemini Pro 2.5 تولید کن که:
+      // این متد اکنون از داده‌های ساختاریافته برای تولید یک پرامپت دقیق استفاده می‌کند
+      const promptData = {
+        mainTopic: topic,
+        wordCount: contentGuide.structure?.totalWordCount || 2500,
+        tone: contentGuide.contentTone || { style: "حرفه‌ای اما قابل فهم", voice: "دوستانه و قابل اعتماد" },
+        targetAudience: contentGuide.contentStrategy?.targetAudience || "کاربران فارسی‌زبان در ایران",
+        mainKeywords: keywords.mainKeywords?.map(k => k.keyword || k),
+        secondaryKeywords: keywords.secondaryKeywords?.map(k => k.keyword || k),
+        keywordDensity: contentGuide.seoOptimization?.keywordDensity || { primary: "1.5-2%", secondary: "0.8-1.2%" },
+        structure: contentGuide.structure,
+        headings: contentGuide.seoOptimization?.headingStructure,
+        formatting: {
+          bolding: "نکات مهم",
+          italics: "تاکیدات",
+          lists: "حداقل 3 لیست شماره‌دار یا نقطه‌ای",
+          tables: "حداقل یک جدول مقایسه‌ای",
+          emojis: "استفاده مناسب برای بهبود خوانایی"
+        },
+        resources: {
+          count: 3,
+          type: "معتبر بین‌المللی",
+          linkType: "nofollow",
+          description: "یک پاراگراف توضیح برای هر منبع"
+        },
+        specialInstructions: [
+          "محتوا باید 100% منحصربه‌فرد و ارزشمند باشد.",
+          "از زبان ساده و روان با مثال‌های عملی و کاربردی استفاده شود.",
+          "محتوا برای موبایل کاملاً بهینه باشد."
+        ]
+      };
 
-موضوع: ${topic}
-کلمات کلیدی اصلی: ${keywords.mainKeywords?.map(k => k.keyword || k).join(', ')}
+      // تبدیل داده‌های ساختاریافته به یک پرامپت متنی
+      const finalPromptString = this.buildPromptString(promptData);
 
-راهنمای محتوا:
-${JSON.stringify(contentGuide, null, 2)}
-
-پرامپت باید شامل این موارد باشد:
-1. دستورالعمل دقیق تولید محتوا
-2. ساختار کامل مقاله
-3. نحوه استفاده از کلمات کلیدی
-4. راهنمای فرمت‌بندی (بولد، ایتالیک، لیست‌ها)
-5. دستورات سئو فنی
-6. نحوه ایجاد جداول و لیست‌ها
-7. راهنمای نوشتن عناوین جذاب
-8. نکات تجربه کاربری
-9. راهنمای اضافه کردن 3 منبع معتبر بین‌المللی با لینک nofollow
-
-پرامپت را به گونه‌ای بنویس که Gemini Pro 2.5 بتواند مستقیماً یک مقاله کامل و بهینه شده تولید کند.
-
-خروجی:
-{
-  "prompt": "پرامپت کامل برای Gemini Pro 2.5",
-  "additionalInstructions": ["دستورات اضافی"],
-  "qualityChecklist": ["چک‌لیست کیفی برای بررسی نهایی"]
-}
-`;
-
-      const response = await this.callAI(promptGenerationPrompt);
-      const promptData = JSON.parse(response);
-
-      return {
-        ...promptData,
+      const finalPromptObject = {
+        prompt: finalPromptString,
+        additionalInstructions: promptData.specialInstructions,
+        qualityChecklist: [
+          "آیا کلمات کلیدی به طور طبیعی استفاده شده‌اند؟",
+          "آیا محتوا ارزش واقعی برای خواننده دارد؟",
+          "آیا ساختار عناوین صحیح است؟",
+          "آیا فرمت‌بندی مناسب انجام شده؟",
+          "آیا منابع معتبر اضافه شده‌اند؟"
+        ],
         metadata: {
           generatedFor: topic,
-          targetModel: "Gemini Pro 2.5",
+          targetModel: "gemini-1.5-pro-latest",
           language: this.language,
           region: this.region,
           createdAt: new Date().toISOString()
         }
       };
+
+      return finalPromptObject;
 
     } catch (error) {
       console.error('خطا در تولید پرامپت نهایی:', error);
@@ -198,10 +209,36 @@ ${JSON.stringify(contentGuide, null, 2)}
     }
   }
 
+  buildPromptString(data) {
+    let prompt = `تو یک نویسنده محتوای سئو حرفه‌ای هستی. یک مقاله جامع و بهینه شده درباره "${data.mainTopic}" بنویس که:\n\n`;
+    prompt += `📋 **مشخصات کلی:**\n- تعداد کلمات: ${data.wordCount} کلمه\n- لحن: ${data.tone.style} و ${data.tone.voice}\n- مخاطب: ${data.targetAudience}\n\n`;
+    prompt += `🎯 **کلمات کلیدی:**\n- اصلی: ${data.mainKeywords.join(', ')}\n- فرعی: ${data.secondaryKeywords.join(', ')}\n- چگالی: ${data.keywordDensity.primary} برای اصلی, ${data.keywordDensity.secondary} برای فرعی\n\n`;
+    prompt += `📝 **ساختار مقاله:**\n\n**H1:** ${data.headings.h1}\n\n`;
+    prompt += `**مقدمه (${data.structure.introduction.wordCount} کلمه):**\n- ${data.structure.introduction.purpose}\n\n`;
+
+    data.structure.mainBody.sections.forEach(section => {
+      prompt += `**H2:** ${section.title} (${section.wordCount} کلمه)\n`;
+      section.keyPoints.forEach(point => {
+        prompt += `- ${point}\n`;
+      });
+      prompt += `\n`;
+    });
+
+    prompt += `**H2:** ${data.headings.h2.slice(-1)[0]} (${data.structure.conclusion.wordCount} کلمه)\n- ${data.structure.conclusion.purpose}\n- فراخوان به عمل: ${data.structure.conclusion.callToAction}\n\n`;
+    prompt += `🎨 **فرمت‌بندی:**\n- از **بولد** برای ${data.formatting.bolding} استفاده کن\n- از *ایتالیک* برای ${data.formatting.italics} استفاده کن\n- ${data.formatting.lists} ایجاد کن\n- ${data.formatting.tables} اضافه کن\n\n`;
+    prompt += `🔗 **منابع:**\nدر انتهای مقاله، ${data.resources.count} منبع ${data.resources.type} اضافه کن که لینک nofollow داشته باشند و هر کدام ${data.resources.description} داشته باشند.\n\n`;
+    prompt += `⚡ **نکات مهم:**\n- ${data.specialInstructions.join('\n- ')}\n\nمقاله را کامل و آماده انتشار بنویس.`;
+
+    return prompt;
+  }
+
   async callAI(prompt) {
+    // آدرس API به نقطه پایانی صحیح avalai.ir اصلاح شد
+    const url = 'https://api.avalai.ir/v1/chat/completions';
+
     try {
-      const response = await axios.post('https://api.first-ai.com/v1/chat/completions', {
-        model: 'gemini-pro-2.5',
+      const response = await axios.post(url, {
+        model: 'gemini-1.5-pro-latest', // استفاده از یک مدل رایج و قدرتمند
         messages: [
           {
             role: 'user',
@@ -209,7 +246,7 @@ ${JSON.stringify(contentGuide, null, 2)}
           }
         ],
         temperature: 0.3,
-        max_tokens: 4000
+        max_tokens: 8192 // افزایش ظرفیت برای پاسخ‌های بسیار کامل
       }, {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
@@ -219,7 +256,7 @@ ${JSON.stringify(contentGuide, null, 2)}
 
       return response.data.choices[0].message.content;
     } catch (error) {
-      console.error('خطا در فراخوانی API:', error);
+      console.error('خطا در فراخوانی API:', error.response ? error.response.data : error.message);
       throw error;
     }
   }
@@ -284,7 +321,7 @@ ${JSON.stringify(contentGuide, null, 2)}
                 "اجتناب از اشتباهات رایج",
                 "بهینه‌سازی و بهبود عملکرد"
               ],
-              keywordsToInclude: keywords.mainKeywords?.slice(2, 4) || [`${topic} حرفه‌ای`]
+              keywordsToInclude: []
             }
           ]
         },
@@ -298,7 +335,7 @@ ${JSON.stringify(contentGuide, null, 2)}
         keywordDensity: {
           primary: "1.5-2%",
           secondary: "0.8-1.2%",
-          semantic: keywords.semanticKeywords || ["راهنما", "آموزش", "نکات", "استراتژی"]
+          semantic: keywords.semanticKeywords || ["راهنما", "آموزش", "نکات"]
         },
         headingStructure: {
           h1: `راهنمای جامع ${topic}: همه چیزی که باید بدانید`,
@@ -331,51 +368,14 @@ ${JSON.stringify(contentGuide, null, 2)}
           ]
         }
       },
-      contentEnhancements: {
-        visualElements: {
-          images: {
-            count: 5,
-            types: ["تصویر شاخص", "اینفوگرافیک", "نمودار", "اسکرین‌شات"],
-            altTextStrategy: "توصیف دقیق با کلمات کلیدی"
-          },
-          videos: {
-            suggestions: ["ویدئو آموزشی کوتاه", "دمو عملی"],
-            placement: "در بخش راهکارهای عملی"
-          },
-          tables: ["مقایسه روش‌ها", "چک‌لیست عملی"],
-          lists: ["فهرست نکات", "مراحل گام به گام", "منابع مفید"]
-        },
-        interactiveElements: ["نظرسنجی", "چک‌لیست تعاملی"],
-        userEngagement: ["سوال از خواننده", "دعوت به اشتراک تجربه"]
-      },
       competitiveAdvantage: {
         differentiators: [
           "محتوای جامع‌تر از رقبا",
           "رویکرد عملی و کاربردی",
           "به‌روزترین اطلاعات"
         ],
-        gapFilling: competitors.marketAnalysis?.opportunities || [
-          "محتوای عمیق‌تر",
-          "مثال‌های عملی بیشتر",
-          "پوشش جنبه‌های مغفول"
-        ],
+        gapFilling: competitors.marketAnalysis?.opportunities || [],
         valueProposition: "تنها منبعی که همه چیز را در یک جا ارائه می‌دهد"
-      },
-      technicalSEO: {
-        schemaMarkup: ["Article", "HowTo", "FAQ"],
-        pageSpeed: ["بهینه‌سازی تصاویر", "کاهش درخواست‌های HTTP"],
-        mobileOptimization: ["طراحی ریسپانسیو", "سرعت موبایل"],
-        coreWebVitals: ["بهبود LCP", "کاهش CLS", "بهینه‌سازی FID"]
-      },
-      contentTone: {
-        style: "آموزشی و راهنما",
-        voice: "دوستانه و قابل اعتماد",
-        personality: "متخصص اما قابل فهم"
-      },
-      qualityAssurance: {
-        factChecking: ["منابع معتبر", "آمار به‌روز", "مراجع علمی"],
-        expertReview: "بررسی توسط متخصص حوزه",
-        userTesting: "تست با نمونه کاربران هدف"
       }
     };
 
@@ -411,17 +411,14 @@ ${JSON.stringify(contentGuide, null, 2)}
 - شروع با هوک جذاب (آمار، سوال، یا مشکل رایج)
 - معرفی اهمیت ${topic}
 - پیش‌نمایی محتوای مقاله
-- استفاده طبیعی از کلمه کلیدی اصلی
 
 **H2:** مفاهیم اساسی ${topic} (600 کلمه)
 - **H3:** تعریف دقیق ${topic}
 - **H3:** اهمیت و کاربردهای ${topic}
-- **H3:** مزایا و چالش‌های ${topic}
 
 **H2:** راهکارهای عملی ${topic} (800 کلمه)
 - **H3:** مراحل اجرا گام به گام
 - **H3:** ابزارها و منابع مورد نیاز
-- **H3:** نکات و ترفندهای کاربردی
 
 **H2:** نکات پیشرفته و بهترین شیوه‌ها (500 کلمه)
 - **H3:** تکنیک‌های پیشرفته
@@ -430,7 +427,6 @@ ${JSON.stringify(contentGuide, null, 2)}
 **H2:** نتیجه‌گیری و قدم‌های بعدی (300 کلمه)
 - خلاصه نکات کلیدی
 - فراخوان به عمل
-- تشویق به اجرا
 
 🎨 **فرمت‌بندی:**
 - از **بولد** برای نکات مهم استفاده کن
@@ -440,38 +436,22 @@ ${JSON.stringify(contentGuide, null, 2)}
 - از ایموجی مناسب برای بهبود خوانایی استفاده کن
 
 🔗 **منابع:**
-در انتهای مقاله، 3 منبع معتبر بین‌المللی اضافه کن که:
-- مرتبط با موضوع باشند
-- از سایت‌های معتبر باشند (نه رقیب)
-- لینک nofollow داشته باشند
-- هر کدام یک پاراگراف توضیح داشته باشند
-
-⚡ **نکات مهم:**
-- محتوا باید منحصربه‌فرد و ارزشمند باشد
-- از زبان ساده و روان استفاده کن
-- مثال‌های عملی و کاربردی ارائه ده
-- پاسخ سوالات رایج کاربران را بده
-- محتوا باید برای موبایل خوانا باشد
+در انتهای مقاله، 3 منبع معتبر بین‌المللی با لینک nofollow و توضیحات مرتبط اضافه کن.
 
 مقاله را کامل و آماده انتشار بنویس.`,
       additionalInstructions: [
         "محتوا باید 100% منحصربه‌فرد باشد",
-        "از کپی‌پیست اجتناب کن",
         "مثال‌های محلی و مرتبط با ایران استفاده کن",
-        "زبان ساده و قابل فهم باشد",
         "ساختار منطقی و جریان روان داشته باشد"
       ],
       qualityChecklist: [
         "آیا کلمات کلیدی به طور طبیعی استفاده شده‌اند؟",
         "آیا محتوا ارزش واقعی برای خواننده دارد؟",
-        "آیا ساختار عناوین صحیح است؟",
-        "آیا فرمت‌بندی مناسب انجام شده؟",
-        "آیا منابع معتبر اضافه شده‌اند؟",
-        "آیا محتوا برای موبایل بهینه است؟"
+        "آیا ساختار عناوین صحیح است؟"
       ],
       metadata: {
         generatedFor: topic,
-        targetModel: "Gemini Pro 2.5",
+        targetModel: "gemini-1.5-pro-latest",
         language: this.language,
         region: this.region,
         createdAt: new Date().toISOString()

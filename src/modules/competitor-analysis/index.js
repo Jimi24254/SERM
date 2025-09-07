@@ -68,9 +68,12 @@ class CompetitorAnalyzer {
   }
 
   async callAI(prompt) {
+    // آدرس API به نقطه پایانی صحیح avalai.ir اصلاح شد
+    const url = 'https://api.avalai.ir/v1/chat/completions';
+
     try {
-      const response = await axios.post('https://api.first-ai.com/v1/chat/completions', {
-        model: 'gemini-pro-2.5',
+      const response = await axios.post(url, {
+        model: 'gemini-1.5-pro-latest', // استفاده از یک مدل رایج و قدرتمند
         messages: [
           {
             role: 'user',
@@ -78,7 +81,7 @@ class CompetitorAnalyzer {
           }
         ],
         temperature: 0.2,
-        max_tokens: 3000
+        max_tokens: 4096 // افزایش ظرفیت برای پاسخ‌های کامل‌تر
       }, {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
@@ -88,7 +91,7 @@ class CompetitorAnalyzer {
 
       return response.data.choices[0].message.content;
     } catch (error) {
-      console.error('خطا در فراخوانی API:', error);
+      console.error('خطا در فراخوانی API:', error.response ? error.response.data : error.message);
       throw error;
     }
   }
@@ -178,7 +181,7 @@ JSON خروجی:
 
   getFallbackCompetitors(topic) {
     return {
-      competitors: [
+      list: [ // نام این کلید از competitors به list تغییر کرد تا با ساختار داخلی main.js همخوانی داشته باشد
         {
           name: "رقیب شماره ۱",
           url: "https://competitor1.example.com",
@@ -239,7 +242,8 @@ JSON خروجی:
         ]
       },
       analysisDate: new Date().toISOString(),
-      topic: topic
+      topic: topic,
+      totalAnalyzed: 3
     };
   }
 
