@@ -1,7 +1,7 @@
 const CompetitorAnalyzer = require('../modules/competitor-analysis');
 const UnifiedAnalyzer = require('../modules/unified-analyzer');
 const { generateFinalPrompt, generateExecutiveSummary } = require('../utils/helpers');
-const { validateApiKeys } = require('../utils/validator');
+const { validateApiKeys } = require('../utils/validator'); // <-- این خط اصلاح شد
 
 class Main {
   constructor() {
@@ -12,7 +12,7 @@ class Main {
       region: 'IR',
     };
 
-    validateApiKeys(this.config);
+    validateApiKeys(this.config); // این فراخوانی حالا درست کار می‌کند
 
     this.competitorAnalyzer = new CompetitorAnalyzer(this.config);
     this.unifiedAnalyzer = new UnifiedAnalyzer(this.config);
@@ -59,16 +59,14 @@ class Main {
       };
 
       console.log('🎉 تحلیل SERM با موفقیت تکمیل شد.');
-      return finalData; // این خروجی مستقیماً به index.js برمی‌گردد
+      return finalData;
 
     } catch (error) {
       console.error(`❌ خطا در اجرای تحلیل SERM: ${error.message}`);
-      // پرتاب خطا به سمت بالا تا در index.js مدیریت شود
       throw error;
     }
   }
 
-  // این متدها برای سازگاری با endpoint های /health و /config باقی می‌مانند
   getConfig() {
     return {
       language: this.config.language,
