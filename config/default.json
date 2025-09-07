@@ -1,0 +1,41 @@
+{
+  "app": {
+    "name": "SERM",
+    "version": "1.0.0",
+    "environment": "production"
+  },
+  "ai": {
+    "models": {
+      "gemini": {
+        "maxTokens": 4096,
+        "temperature": 0.7,
+        "topP": 0.9,
+        "maxOutputTokens": 2048
+      },
+      "gpt": {
+        "maxTokens": 8192,
+        "temperature": 0.6,
+        "topP": 0.8,
+        "maxOutputTokens": 4096
+      }
+    }
+  },
+  "seo": {
+    "defaultWordCount": 1800,
+    "keywordDensity": {
+      "min": 1,
+      "max": 2
+    },
+    "contentTypes": [
+      "blog",
+      "article",
+      "guide",
+      "tutorial"
+    ]
+  },
+  "logging": {
+    "level": "info",
+    "maxLogFiles": 10,
+    "maxLogSize": "10M"
+  }
+}
