@@ -3,8 +3,8 @@ const axios = require('axios');
 class CompetitorAnalyzer {
   constructor(config) {
     this.config = config;
-    this.apiKey = config.apiKey; // این کلید برای avalai.ir است
-    this.serpApiKey = process.env.SERPAPI_KEY; // کلید جدید برای SerpApi
+    this.apiKey = config.apiKey;
+    this.serpApiKey = process.env.SERPAPI_KEY;
     this.language = config.language || 'fa';
     this.region = config.region || 'IR';
   }
@@ -15,25 +15,27 @@ class CompetitorAnalyzer {
     return text;
   }
 
-  // متد جدید برای دریافت نتایج واقعی از گوگل
   async fetchRealCompetitors(topic) {
     if (!this.serpApiKey) {
-      console.warn('کلید SERPAPI_KEY تنظیم نشده است. از حالت پیش‌فرض استفاده می‌شود.');
+      console.warn('کلید SERPAPI_KEY تنظیم نشده است.');
       return [];
     }
-
     try {
       const response = await axios.get('https://serpapi.com/search.json', {
         params: {
           api_key: this.serpApiKey,
           q: topic,
-          google_domain: 'google.com', // برای جستجوی جهانی
-          gl: 'ir', // کشور: ایران
-          hl: 'fa'  // زبان: فارسی
+          google_domain: 'google.com',
+          gl: 'ir',
+          hl: 'fa'
         }
       });
 
-      // فقط 5 نتیجه ارگانیک اول را استخراج می‌کنیم
+      // =================================================================
+      // کد دیباگ: پاسخ کامل SerpApi را در لاگ Vercel چاپ می‌کنیم
+      console.log('پاسخ خام از SerpApi:', JSON.stringify(response.data, null, 2));
+      // =================================================================
+
       return response.data.organic_results?.slice(0, 5).map(result => ({
         name: result.title,
         url: result.link
@@ -41,32 +43,26 @@ class CompetitorAnalyzer {
 
     } catch (error) {
       console.error('خطا در فراخوانی SerpApi:', error.message);
-      return []; // در صورت خطا، یک لیست خالی برمی‌گردانیم
+      return [];
     }
   }
 
   async findTopCompetitors(topic) {
-    // مرحله ۱: دریافت رقبای واقعی از گوگل با SerpApi
     const realCompetitors = await this.fetchRealCompetitors(topic);
 
     if (realCompetitors.length === 0) {
-      console.log('هیچ رقیب واقعی پیدا نشد، از حالت پیش‌فرض استفاده می‌شود.');
-      return this.getFallbackCompetitors(topic);
+      console.log('هیچ رقیب ارگانیک در پاسخ SerpApi پیدا نشد. به حالت تحلیل خلاقانه بازمی‌گردیم.');
+      // اگر رقیب واقعی پیدا نشد، از هوش مصنوعی می‌خواهیم رقبای فرضی تولید کند
+      return this.generateHypotheticalCompetitors(topic);
     }
 
     try {
-      // مرحله ۲: ارسال داده‌های واقعی به هوش مصنوعی برای تحلیل
       const competitorInfo = realCompetitors.map(c => `- ${c.name} (${c.url})`).join('\n');
       const competitorPrompt = `
-تو یک متخصص تحلیل رقبا و سئو هستی. رقبای اصلی برای موضوع "${topic}" اینها هستند:
+تو یک متخصص تحلیل سئو هستی. رقبای اصلی برای موضوع "${topic}" اینها هستند:
 ${competitorInfo}
-
-بر اساس این لیست واقعی، موارد زیر را تحلیل کن:
-1.  نقاط قوت و ضعف احتمالی هر کدام را (بر اساس نام و حوزه فعالیتشان) حدس بزن.
-2.  یک تحلیل کلی از سطح رقابت در این بازار ارائه بده.
-3.  چند فرصت استراتژیک برای پیشی گرفتن از این رقبا پیشنهاد بده.
-
-خروجی را به صورت JSON با این ساختار بده:
+بر اساس این لیست واقعی، یک تحلیل کلی از سطح رقابت و چند فرصت استراتژیک برای پیشی گرفتن از این رقبا پیشنهاد بده.
+خروجی را به صورت JSON با ساختار زیر بده:
 {
   "marketAnalysis": {
     "competitionLevel": "سطح رقابت (بالا/متوسط/کم)",
@@ -79,9 +75,8 @@ ${competitorInfo}
       const cleanJsonString = this.extractJson(rawResponse);
       const analysisData = JSON.parse(cleanJsonString);
 
-      // ترکیب نتایج واقعی با تحلیل هوش مصنوعی
       return {
-        list: realCompetitors.map(comp => ({ ...comp, strengths: [], weaknesses: [] })), // افزودن فیلدهای خالی برای سازگاری
+        list: realCompetitors.map(comp => ({ ...comp, strengths: [], weaknesses: [] })),
         totalAnalyzed: realCompetitors.length,
         marketAnalysis: analysisData.marketAnalysis || {},
         detailedAnalysis: [],
@@ -91,17 +86,39 @@ ${competitorInfo}
 
     } catch (error) {
       console.error('خطا در تحلیل رقبا با هوش مصنوعی:', error);
-      // اگر تحلیل AI شکست خورد، حداقل لیست رقبا را برمی‌گردانیم
-      return {
-        list: realCompetitors,
-        totalAnalyzed: realCompetitors.length,
-        marketAnalysis: { competitionLevel: "نامشخص", opportunities: ["تحلیل AI ناموفق بود."] },
-        detailedAnalysis: [],
-        analysisDate: new Date().toISOString(),
-        topic: topic
-      };
+      return { list: realCompetitors, totalAnalyzed: realCompetitors.length, marketAnalysis: {}, detailedAnalysis: [], analysisDate: new Date().toISOString(), topic: topic };
     }
   }
+
+  // متد جدید برای زمانی که SerpApi رقیبی پیدا نمی‌کند
+  async generateHypotheticalCompetitors(topic) {
+    try {
+        const prompt = `
+تو یک متخصص تحلیل رقبا هستی. برای موضوع "${topic}" در بازار ایران، 3 رقیب فرضی و واقع‌گرایانه با تحلیل بازار تولید کن.
+خروجی JSON:
+{
+  "competitors": [
+    {"name": "نام سایت رقیب ۱", "url": "آدرس فرضی ۱", "strengths": ["نقطه قوت"], "weaknesses": ["نقطه ضعف"]}
+  ],
+  "marketAnalysis": {"competitionLevel": "بالا", "opportunities": ["یک فرصت"]}
+}`;
+        const rawResponse = await this.callAI(prompt);
+        const cleanJsonString = this.extractJson(rawResponse);
+        const data = JSON.parse(cleanJsonString);
+        return {
+            list: data.competitors || [],
+            totalAnalyzed: data.competitors?.length || 0,
+            marketAnalysis: data.marketAnalysis || {},
+            detailedAnalysis: [],
+            analysisDate: new Date().toISOString(),
+            topic: topic
+        };
+    } catch (error) {
+        console.error("خطا در تولید رقبای فرضی:", error);
+        return { list: [], totalAnalyzed: 0, marketAnalysis: {}, detailedAnalysis: [], analysisDate: new Date().toISOString(), topic: topic };
+    }
+  }
+
 
   async callAI(prompt) {
     const url = 'https://api.avalai.ir/v1/chat/completions';
@@ -119,14 +136,6 @@ ${competitorInfo}
       console.error('خطا در فراخوانی API avalai:', error.response ? error.response.data : error.message);
       throw error;
     }
-  }
-
-  getFallbackCompetitors(topic) {
-    return {
-      list: [], totalAnalyzed: 0, marketAnalysis: {}, detailedAnalysis: [],
-      analysisDate: new Date().toISOString(),
-      topic: topic
-    };
   }
 }
 
