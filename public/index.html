@@ -114,12 +114,8 @@
         .result-card h3 {
             color: var(--secondary-color);
         }
-        ul {
-            padding-right: 20px;
-        }
-        li {
-            margin-bottom: 8px;
-        }
+        ul { padding-right: 20px; }
+        li { margin-bottom: 8px; }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -130,9 +126,7 @@
             padding: 10px;
             border-bottom: 1px solid var(--border-color);
         }
-        th {
-            background-color: #f2f2f2;
-        }
+        th { background-color: #f2f2f2; }
         pre {
             background-color: #e9ecef;
             padding: 15px;
@@ -145,182 +139,178 @@
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>🚀 SERM - موتور تحلیل سئو</h1>
-            <p>موضوع مورد نظر خود را برای تحلیل وارد کنید</p>
-        </header>
+<div class="container">
+    <header>
+        <h1>🚀 SERM - موتور تحلیل سئو</h1>
+        <p>موضوع مورد نظر خود را برای تحلیل وارد کنید</p>
+    </header>
 
-        <form id="analysis-form">
-            <input type="text" id="topic-input" placeholder="مثال: بهترین روش سئو چیست؟" required>
-            <button type="submit" id="submit-btn">تحلیل کن</button>
-        </form>
+    <form id="analysis-form">
+        <input type="text" id="topic-input" placeholder="مثال: بهترین روش سئو چیست؟" required>
+        <button type="submit" id="submit-btn">تحلیل کن</button>
+    </form>
 
-        <div class="loader" id="loader">
-            <div class="spinner"></div>
-            <p>در حال تحلیل... این فرآیند ممکن است تا ۳۰ ثانیه طول بکشد.</p>
-        </div>
-
-        <div class="error-message" id="error-message"></div>
-
-        <div id="results-container">
-            <!-- نتایج تحلیل در اینجا نمایش داده خواهد شد -->
-        </div>
+    <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <p>در حال تحلیل... این فرآیند ممکن است تا ۳۰ ثانیه طول بکشد.</p>
     </div>
 
-    <script>
-        const form = document.getElementById('analysis-form');
-        const input = document.getElementById('topic-input');
-        const submitBtn = document.getElementById('submit-btn');
-        const loader = document.getElementById('loader');
-        const errorContainer = document.getElementById('error-message');
-        const resultsContainer = document.getElementById('results-container');
+    <div class="error-message" id="error-message"></div>
 
-        function createUserCentricAnalysisCard(analysis) {
-            if (!analysis) return '';
-            return `
-            <div class="result-card">
-                <h2>🧠 تحلیل کاربرمحور (هسته استراتژی)</h2>
-                <h3>قصد کاربر (User Intent)</h3>
-                <p><strong>قصد اصلی:</strong> ${analysis.userIntent.primaryIntent}</p>
-                <p><strong>قصدهای فرعی:</strong></p>
-                <ul>${analysis.userIntent.secondaryIntents.map(item => `<li>${item}</li>`).join('')}</ul>
-                <p><strong>سوالات پنهان کاربر:</strong></p>
-                <ul>${analysis.userIntent.unspokenQuestions.map(item => `<li>${item}</li>`).join('')}</ul>
+    <div id="results-container"></div>
+</div>
 
-                <h3>استراتژی سیگنال‌های اعتماد (E-E-A-T)</h3>
-                <ul>
-                    <li><strong>تجربه (Experience):</strong> ${analysis.trustSignalsStrategy.E}</li>
-                    <li><strong>تخصص (Expertise):</strong> ${analysis.trustSignalsStrategy.E2}</li>
-                    <li><strong>اعتبار (Authoritativeness):</strong> ${analysis.trustSignalsStrategy.A}</li>
-                    <li><strong>اعتماد (Trustworthiness):</strong> ${analysis.trustSignalsStrategy.T}</li>
-                </ul>
-            </div>
-            `;
-        }
+<script>
+    const form = document.getElementById('analysis-form');
+    const input = document.getElementById('topic-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const loader = document.getElementById('loader');
+    const errorContainer = document.getElementById('error-message');
+    const resultsContainer = document.getElementById('results-container');
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const topic = input.value.trim();
-            if (!topic) return;
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const topic = input.value.trim();
+        if (!topic) return;
 
-            // آماده‌سازی UI برای درخواست جدید
-            submitBtn.disabled = true;
-            loader.style.display = 'block';
-            errorContainer.style.display = 'none';
-            resultsContainer.innerHTML = '';
+        submitBtn.disabled = true;
+        loader.style.display = 'block';
+        errorContainer.style.display = 'none';
+        resultsContainer.innerHTML = '';
 
-            try {
-                // ارسال درخواست به API
-                const response = await fetch(`/analyze/${encodeURIComponent(topic)}`);
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'خطایی در سرور رخ داد.');
-                }
-                
-                const result = await response.json();
-                
-                // نمایش نتایج
-                displayResults(result.data);
+        try {
+            const response = await fetch(`/analyze/${encodeURIComponent(topic)}`);
 
-            } catch (error) {
-                console.error('Error during analysis:', error);
-                errorContainer.innerText = `خطا: ${error.message}`;
-                errorContainer.style.display = 'block';
-            } finally {
-                // بازگرداندن UI به حالت عادی
-                loader.style.display = 'none';
-                submitBtn.disabled = false;
+            if (!response.ok) {
+                let errorData;
+                try { errorData = await response.json(); } catch {}
+                throw new Error(errorData?.error || 'خطایی در سرور رخ داد.');
             }
-        });
 
-        function displayResults(data) {
-            resultsContainer.innerHTML = `
-                ${createExecutiveSummaryCard(data.executiveSummary)}
-                ${createUserCentricAnalysisCard(data.userCentricAnalysis)}
-                ${createKeywordsCard(data.keywords)}
-                ${createCompetitorsCard(data.competitors)}
-                ${createContentGuideCard(data.contentGuide)}
-                ${createFinalPromptCard(data.finalPrompt)}
-            `;
+            const result = await response.json();
+            displayResults(result.data);
+
+        } catch (error) {
+            console.error('Error during analysis:', error);
+            errorContainer.innerText = `خطا: ${error.message}`;
+            errorContainer.style.display = 'block';
+        } finally {
+            loader.style.display = 'none';
+            submitBtn.disabled = false;
         }
-        
-        function createExecutiveSummaryCard(summary) {
-            return `
-            <div class="result-card">
-                <h2>📊 خلاصه مدیریتی</h2>
-                <h3>یافته‌های کلیدی:</h3>
-                <ul>${summary.keyFindings.map(item => `<li>${item}</li>`).join('')}</ul>
-                <h3>توصیه‌ها:</h3>
-                <ul>${summary.recommendations.map(item => `<li>${item}</li>`).join('')}</ul>
-            </div>
-            `;
-        }
+    });
 
-        function createKeywordsCard(keywords) {
-             const mainKeywordsTable = keywords.mainKeywords.length > 0 ? `
-                <table>
-                    <thead><tr><th>کلمه کلیدی اصلی</th><th>حجم جستجو</th><th>رقابت</th></tr></thead>
-                    <tbody>
-                        ${keywords.mainKeywords.map(k => `<tr><td>${k.keyword}</td><td>${k.searchVolume || 'N/A'}</td><td>${k.competition || 'N/A'}</td></tr>`).join('')}
-                    </tbody>
-                </table>` : '<p>کلمه کلیدی اصلی یافت نشد.</p>';
+    function displayResults(data) {
+        const sa = data.strategicAnalysis || {};
+        const fp = data.finalPromptForWriter || '';
 
-            return `
-            <div class="result-card">
-                <h2>🔑 تحلیل کلمات کلیدی</h2>
-                <h3>کلمات کلیدی اصلی</h3>
-                ${mainKeywordsTable}
-                <h3>کلمات کلیدی فرعی</h3>
-                <ul>${keywords.secondaryKeywords.map(k => `<li>${k.keyword}</li>`).join('')}</ul>
-                <h3>کلمات کلیدی طولانی (Long-tail)</h3>
-                <ul>${keywords.longTailKeywords.map(k => `<li>${k}</li>`).join('')}</ul>
-            </div>
-            `;
-        }
+        resultsContainer.innerHTML = `
+            ${createExecutiveSummaryCard(sa.executiveSummary || { keyFindings: [], recommendations: [] })}
+            ${createUserCentricAnalysisCard(sa.userCentricAnalysis || { userIntent: { secondaryIntents: [], unspokenQuestions: [] }, trustSignalsStrategy: {} })}
+            ${createKeywordsCard(sa.keywords || { mainKeywords: [], secondaryKeywords: [], longTailKeywords: [] })}
+            ${createCompetitorsCard(sa.competitors || { marketAnalysis: { competitionLevel: '', opportunities: [] }, list: [] })}
+            ${createContentGuideCard(sa.contentGuide || { structure: { mainBody: { sections: [] }, introduction: {}, conclusion: {} }, contentStrategy: {} })}
+            ${createFinalPromptCard(fp)}
+        `;
+    }
 
-        function createCompetitorsCard(competitors) {
-            return `
-            <div class="result-card">
-                <h2>🏆 تحلیل رقبا</h2>
-                <p><strong>سطح رقابت:</strong> ${competitors.marketAnalysis.competitionLevel}</p>
-                <h3>فرصت‌های استراتژیک:</h3>
-                <ul>${competitors.marketAnalysis.opportunities.map(op => `<li>${op}</li>`).join('')}</ul>
-                <h3>لیست رقبای برتر:</h3>
-                ${competitors.list.length > 0 ? `<ul>${competitors.list.map(c => `<li><a href="${c.url}" target="_blank">${c.name}</a></li>`).join('')}</ul>` : '<p>هیچ رقیب مستقیمی در نتایج یافت نشد.</p>'}
-            </div>
-            `;
-        }
+    function createExecutiveSummaryCard(summary) {
+        return `
+        <div class="result-card">
+            <h2>📊 خلاصه مدیریتی</h2>
+            <h3>یافته‌های کلیدی:</h3>
+            <ul>${summary.keyFindings.map(item => `<li>${item}</li>`).join('')}</ul>
+            <h3>توصیه‌ها:</h3>
+            <ul>${summary.recommendations.map(item => `<li>${item}</li>`).join('')}</ul>
+        </div>
+        `;
+    }
 
-        function createContentGuideCard(guide) {
-            const sections = guide.structure.mainBody.sections.map(s => `<li>${s.title}</li>`).join('');
-            return `
-            <div class="result-card">
-                <h2>📝 راهنمای تولید محتوا</h2>
-                <h3>استراتژی محتوا</h3>
-                <p><strong>عنوان پیشنهادی:</strong> ${guide.contentStrategy.title}</p>
-                <p><strong>توضیحات متا:</strong> ${guide.contentStrategy.metaDescription}</p>
-                <h3>ساختار مقاله (${guide.structure.totalWordCount} کلمه)</h3>
-                <ul>
-                    <li><strong>مقدمه:</strong> ${guide.structure.introduction.purpose}</li>
-                    <li><strong>بدنه اصلی:</strong><ul>${sections}</ul></li>
-                    <li><strong>نتیجه‌گیری:</strong> ${guide.structure.conclusion.purpose}</li>
-                </ul>
-                <p><strong>فراخوان به عمل (CTA):</strong> ${guide.structure.conclusion.callToAction}</p>
-            </div>
-            `;
-        }
+    function createUserCentricAnalysisCard(analysis) {
+        if (!analysis.userIntent) return '';
+        return `
+        <div class="result-card">
+            <h2>🧠 تحلیل کاربرمحور (هسته استراتژی)</h2>
+            <h3>قصد کاربر (User Intent)</h3>
+            <p><strong>قصد اصلی:</strong> ${analysis.userIntent.primaryIntent || ''}</p>
+            <p><strong>قصدهای فرعی:</strong></p>
+            <ul>${(analysis.userIntent.secondaryIntents || []).map(item => `<li>${item}</li>`).join('')}</ul>
+            <p><strong>سوالات پنهان کاربر:</strong></p>
+            <ul>${(analysis.userIntent.unspokenQuestions || []).map(item => `<li>${item}</li>`).join('')}</ul>
 
-        function createFinalPromptCard(promptData) {
-            return `
-            <div class="result-card">
-                <h2>🤖 پرامپت نهایی برای هوش مصنوعی</h2>
-                <pre><code>${promptData.prompt}</code></pre>
-            </div>
-            `;
-        }
+            <h3>استراتژی سیگنال‌های اعتماد (E-E-A-T)</h3>
+            <ul>
+                <li><strong>تجربه (Experience):</strong> ${analysis.trustSignalsStrategy.E || ''}</li>
+                <li><strong>تخصص (Expertise):</strong> ${analysis.trustSignalsStrategy.E2 || ''}</li>
+                <li><strong>اعتبار (Authoritativeness):</strong> ${analysis.trustSignalsStrategy.A || ''}</li>
+                <li><strong>اعتماد (Trustworthiness):</strong> ${analysis.trustSignalsStrategy.T || ''}</li>
+            </ul>
+        </div>
+        `;
+    }
 
-    </script>
+    function createKeywordsCard(keywords) {
+        const mainKeywordsTable = (keywords.mainKeywords || []).length > 0 ? `
+            <table>
+                <thead><tr><th>کلمه کلیدی اصلی</th><th>حجم جستجو</th><th>رقابت</th></tr></thead>
+                <tbody>
+                    ${keywords.mainKeywords.map(k => `<tr><td>${k.keyword}</td><td>${k.searchVolume || 'N/A'}</td><td>${k.competition || 'N/A'}</td></tr>`).join('')}
+                </tbody>
+            </table>` : '<p>کلمه کلیدی اصلی یافت نشد.</p>';
+
+        return `
+        <div class="result-card">
+            <h2>🔑 تحلیل کلمات کلیدی</h2>
+            <h3>کلمات کلیدی اصلی</h3>
+            ${mainKeywordsTable}
+            <h3>کلمات کلیدی فرعی</h3>
+            <ul>${(keywords.secondaryKeywords || []).map(k => `<li>${k.keyword}</li>`).join('')}</ul>
+            <h3>کلمات کلیدی طولانی (Long-tail)</h3>
+            <ul>${(keywords.longTailKeywords || []).map(k => `<li>${k}</li>`).join('')}</ul>
+        </div>
+        `;
+    }
+
+    function createCompetitorsCard(competitors) {
+        return `
+        <div class="result-card">
+            <h2>🏆 تحلیل رقبا</h2>
+            <p><strong>سطح رقابت:</strong> ${competitors.marketAnalysis.competitionLevel || ''}</p>
+            <h3>فرصت‌های استراتژیک:</h3>
+            <ul>${(competitors.marketAnalysis.opportunities || []).map(op => `<li>${op}</li>`).join('')}</ul>
+            <h3>لیست رقبای برتر:</h3>
+            ${(competitors.list || []).length > 0 ? `<ul>${competitors.list.map(c => `<li><a href="${c.url}" target="_blank">${c.name}</a></li>`).join('')}</ul>` : '<p>هیچ رقیب مستقیمی یافت نشد.</p>'}
+        </div>
+        `;
+    }
+
+    function createContentGuideCard(guide) {
+        const sections = (guide.structure.mainBody.sections || []).map(s => `<li>${s.title}</li>`).join('');
+        return `
+        <div class="result-card">
+            <h2>📝 راهنمای تولید محتوا</h2>
+            <h3>استراتژی محتوا</h3>
+            <p><strong>عنوان پیشنهادی:</strong> ${guide.contentStrategy.title || ''}</p>
+            <p><strong>توضیحات متا:</strong> ${guide.contentStrategy.metaDescription || ''}</p>
+            <h3>ساختار مقاله (${guide.structure.totalWordCount || 0} کلمه)</h3>
+            <ul>
+                <li><strong>مقدمه:</strong> ${guide.structure.introduction.purpose || ''}</li>
+                <li><strong>بدنه اصلی:</strong><ul>${sections}</ul></li>
+                <li><strong>نتیجه‌گیری:</strong> ${guide.structure.conclusion.purpose || ''}</li>
+            </ul>
+            <p><strong>فراخوان به عمل (CTA):</strong> ${guide.structure.conclusion.callToAction || ''}</p>
+        </div>
+        `;
+    }
+
+    function createFinalPromptCard(promptText) {
+        return `
+        <div class="result-card">
+            <h2>🤖 پرامپت نهایی برای هوش مصنوعی</h2>
+            <pre><code>${promptText}</code></pre>
+        </div>
+        `;
+    }
+</script>
 </body>
 </html>
