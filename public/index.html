@@ -311,10 +311,18 @@
         }
 
         function createFinalPromptCard(promptText) {
+            // بروزرسانی برای نمایش دو بخشی (جدید، اما ساختار فعلی حفظ شده)
+            const sections = promptText.split('Section 2:'); // ساده جدا کن (اگر marker فرق داشت، تنظیم کن)
+            const htmlSection = sections[0]?.replace('Section 1:', '').trim() || '';
+            const imagePrompts = sections[1]?.trim() || '';
+
             return `
             <div class="result-card">
                 <h2>🤖 پرامپت نهایی برای هوش مصنوعی</h2>
-                <pre><code>${promptText || ''}</code></pre>
+                <h3>بخش ۱: کد HTML مقاله</h3>
+                <pre><code>${htmlSection}</code></pre>
+                <h3>بخش ۲: پرامپت‌های تولید تصاویر</h3>
+                <pre><code>${imagePrompts}</code></pre>
             </div>
             `;
         }
