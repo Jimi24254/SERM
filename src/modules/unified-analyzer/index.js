@@ -5,10 +5,32 @@ class UnifiedAnalyzer {
     this.apiKey = config.apiKey;
   }
 
-  extractJson(text) {
+  /**
+   * (تغییر کلیدی) این تابع هوشمند، متن دریافتی از AI را پاکسازی کرده و به JSON تبدیل می‌کند.
+   * این تابع خطاهای رایج مانند کاماهای اضافی (trailing commas) را قبل از parse کردن حذف می‌کند.
+   * @param {string} text - رشته متنی خام از پاسخ AI.
+   * @returns {object} - آبجکت JSON معتبر.
+   */
+  cleanAndParseJson(text) {
+    // 1. ابتدا بخش JSON را از داخل ```json ... ``` یا متن خالص استخراج می‌کنیم.
+    let jsonString = text;
     const jsonMatch = text.match(/```json\n([\s\S]*?)\n```|({[\s\S]*})/);
-    if (jsonMatch) { return jsonMatch[1] || jsonMatch[2]; }
-    return text;
+    if (jsonMatch) {
+      jsonString = jsonMatch[1] || jsonMatch[2];
+    }
+
+    // 2. خطاهای رایج نوشتاری را پاکسازی می‌کنیم (مهمترین بخش).
+    // حذف کاماهای اضافی که قبل از } یا ] قرار دارند.
+    jsonString = jsonString.replace(/,(?=\s*?[}\]])/g, '');
+
+    // 3. حالا رشته پاکسازی شده را parse می‌کنیم.
+    try {
+      return JSON.parse(jsonString);
+    } catch (e) {
+      // اگر حتی بعد از پاکسازی باز هم خطا وجود داشت، آن را برای دیباگ نمایش می‌دهیم.
+      console.error("خطای parse کردن JSON حتی پس از پاکسازی. رشته مشکل‌ساز:", jsonString);
+      throw new Error(`فرمت JSON دریافتی از AI نامعتبر است: ${e.message}`);
+    }
   }
 
   buildPrompt(topic, competitors) {
@@ -19,7 +41,7 @@ class UnifiedAnalyzer {
     return `
 تو یک استراتژیست ارشد سئو هستی که عمیقاً به اصول E-E-A-T (تجربه، تخصص، اعتبار، اعتماد) و "قصد کاربر" معتقدی.
 
-**فلسفه اصلی تو (تغییر کلیدی):**
+**فلسفه اصلی تو:**
 تمام تحلیل‌های زیر باید بر اساس این اصل اساسی انجام شود: چگونه می‌توانیم بهترین، کامل‌ترین و قابل‌اعتمادترین پاسخ را به "قصد واقعی کاربر" از جستجوی موضوع "${topic}" بدهیم؟
 
 **موضوع تحلیل:** "${topic}"
@@ -30,7 +52,7 @@ ${competitorList}
 **وظایف تو:**
 1.  **تحلیل کلمات کلیدی:** لیستی جامع از کلمات کلیدی اصلی، فرعی و طولانی تولید کن. (با در نظر گرفتن قصدهای مختلف کاربر).
 2.  **تحلیل رقبا:** سطح رقابت را بسنج و فرصت‌های کلیدی بازار را بر اساس ضعف رقبا در پاسخ به قصد کاربر و ایجاد اعتماد، شناسایی کن.
-3.  **تحلیل کاربرمحور (تغییر کلیدی):** یک بخش اختصاصی برای تحلیل عمیق قصد کاربر و استراتژی جلب اعتماد او ارائه بده.
+3.  **تحلیل کاربرمحور:** یک بخش اختصاصی برای تحلیل عمیق قصد کاربر و استراتژی جلب اعتماد او ارائه بده.
 4.  **راهنمای محتوا:** یک استراتژی محتوای دقیق طراحی کن که "سفر کاربر" از کنجکاوی تا اعتماد را پوشش دهد و به تمام سوالات پنهان او پاسخ دهد.
 
 خروجی نهایی باید **فقط یک آبجکت JSON خالص** با ساختار دقیق زیر باشد و هیچ متنی خارج از آن وجود نداشته باشد:
@@ -86,7 +108,7 @@ ${competitorList}
       const response = await axios.post(url, {
         model: 'gemini-2.5-pro',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.5, // کمی خلاقیت را برای تحلیل عمیق‌تر افزایش می‌دهیم
+        temperature: 0.5,
         max_tokens: 4096,
         response_format: { type: "json_object" }
       }, {
@@ -97,11 +119,11 @@ ${competitorList}
       });
 
       const rawContent = response.data.choices[0].message.content;
-      const cleanJsonString = this.extractJson(rawContent);
-      return JSON.parse(cleanJsonString);
+      // (تغییر کلیدی) به جای parse کردن مستقیم، از تابع هوشمند و مقاوم خودمان استفاده می‌کنیم.
+      return this.cleanAndParseJson(rawContent);
 
     } catch (error) {
-      console.error('خطا در تحلیل یکپارچه:', error.response ? error.response.data : error.message);
+      console.error('خطا در تحلیل یکپارچه:', error.message);
       throw new Error('فراخوانی به سرویس هوش مصنوعی ناموفق بود.');
     }
   }
