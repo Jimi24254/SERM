@@ -1,8 +1,14 @@
+/**
+ * بر اساس راهنمای محتوای تولید شده، یک پرامپت نهایی برای تولید مقاله می‌سازد.
+ * @param {string} topic - موضوع اصلی تحلیل.
+ * @param {object} unifiedResult - نتیجه تحلیل یکپارچه از هوش مصنوعی.
+ * @returns {object} - آبجکتی شامل پرامپت متنی و متادیتا.
+ */
 function generateFinalPrompt(topic, unifiedResult) {
   const guide = unifiedResult.contentGuide;
   if (!guide || !guide.contentStrategy || !guide.structure) {
     return {
-      prompt: `Write a comprehensive article about "${topic}" as a clean HTML code, in Persian language.`,
+      prompt: `یک مقاله کامل و جامع درباره "${topic}" به صورت کد HTML بنویس.`,
       metadata: { generatedFor: topic, targetModel: 'gemini-2.5-pro', language: 'fa', createdAt: new Date().toISOString() }
     };
   }
@@ -10,39 +16,31 @@ function generateFinalPrompt(topic, unifiedResult) {
   const mainBodySections = guide.structure.mainBody.sections.map(s => `<li>${s.title}</li>`).join('');
   const mainKeywords = unifiedResult.keywords.mainKeywords.map(k => k.keyword).join(', ');
 
-  // (رویکرد ترکیبی) دستورات فنی به انگلیسی، محتوا به فارسی
+  // (اصلاح نهایی و قطعی) استفاده از کدهای جایگزین &lt; و &gt; برای نمایش صحیح تگ‌ها
   const promptText = `
-**Primary Task:** You are an expert SEO content writer. Your task is to write a comprehensive, high-quality, and SEO-optimized article about "${topic}". The entire article must be in the **Persian language**.
+**وظیفه اصلی:** تو یک نویسنده محتوای سئو متخصص هستی. یک مقاله کامل، جامع و سئو شده درباره "${topic}" بنویس.
 
-**CRITICAL INSTRUCTION: The final output must be a clean, complete HTML code. Do not use any other format like Markdown. The entire text must be inside appropriate HTML tags.**
+**مهمترین دستورالعمل: خروجی نهایی باید یک کد HTML کامل و تمیز باشد. از هیچ فرمت دیگری مانند Markdown استفاده نکن. تمام متن باید داخل تگ‌های HTML مناسب قرار گیرد.**
 
----
-
-### **Content and Language Details (Persian)**
-
-1.  **عنوان اصلی (تگ <h1>):** ${guide.contentStrategy.title}
-2.  **کلمات کلیدی اصلی:** کلمات کلیدی "${mainKeywords}" را به صورت طبیعی در متن، به خصوص در سرفصل‌ها و پاراگراف اول، به کار ببر.
-3.  **ساختار مقاله:**
-    *   **مقدمه (تگ <p>):** هدف: ${guide.structure.introduction.purpose}
-    *   **بدنه اصلی (تگ‌های <h2> و <h3>):** باید شامل این سرفصل‌ها باشد:
-        <ul>
+**جزئیات محتوا:**
+1.  **عنوان اصلی (تگ &lt;h1&gt;):** ${guide.contentStrategy.title}
+2.  **تعداد کلمات:** حدود ${guide.structure.totalWordCount || 2500} کلمه.
+3.  **کلمات کلیدی اصلی:** کلمات "${mainKeywords}" را به صورت طبیعی در متن، به خصوص در سرفصل‌ها و پاراگراف اول, به کار ببر.
+4.  **ساختار مقاله:**
+    *   **مقدمه (تگ &lt;p&gt;):** با یک قلاب قوی شروع کن که به ${guide.structure.introduction.purpose} بپردازد و اعتماد اولیه کاربر را جلب کند.
+    *   **بدنه اصلی:** از تگ‌های &lt;h2&gt; برای هر یک از سرفصل‌های اصلی زیر استفاده کن. برای زیرمجموعه‌ها از &lt;h3&gt; استفاده کن.
+        &lt;ul&gt;
             ${mainBodySections}
-        </ul>
-    *   **نتیجه‌گیری (تگ <p>):** هدف: ${guide.structure.conclusion.purpose}. در انتها از این فراخوان به عمل استفاده کن: "${guide.structure.conclusion.callToAction}"
+        &lt;/ul&gt;
+    *   **نتیجه‌گیری:** در بخش پایانی، به ${guide.structure.conclusion.purpose} بپرداز و با یک فراخوان به عمل قوی ("${guide.structure.conclusion.callToAction}") مقاله را تمام کن.
 
----
+**قوانین فرمت‌بندی HTML:**
+*   برای پاراگراف‌ها از تگ &lt;p&gt; استفاده کن.
+*   برای لیست‌های شماره‌دار از &lt;ol&gt; و &lt;li&gt; و برای لیست‌های نقطه‌ای از &lt;ul&gt; و &lt;li&gt; استفاده کن.
+*   برای تاکید روی کلمات مهم، از تگ &lt;strong&gt; (برای بولد کردن) و &lt;em&gt; (برای ایتالیک) استفاده کن.
+*   **3 منبع معتبر بین‌المللی:** در انتهای مقاله، سه منبع معتبر را به صورت یک لیست &lt;ul&gt; با لینک‌های nofollow اضافه کن. مثال: &lt;li&gt;&lt;a href="https://example.com" rel="nofollow noopener noreferrer" target="_blank"&gt;عنوان منبع&lt;/a&gt;: توضیح کوتاه درباره چرایی اعتبار این منبع.&lt;/li&gt;
 
-### **Technical HTML Formatting Rules (English)**
-
-*   **Target Word Count:** Approximately ${guide.structure.totalWordCount || 2500} words.
-*   **Paragraphs:** Use the <p> tag for all paragraphs.
-*   **Lists:** Use <ol> and <li> for numbered lists, and <ul> and <li> for bullet points.
-*   **Emphasis:** Use <strong> for bolding important phrases and <em> for italics.
-*   **External Links:** At the end of the article, add a section with 3 credible, international sources related to psychology or family counseling. Each source must be in a <li> tag with a nofollow link. Example: \`<li><a href="https://example.com" rel="nofollow noopener noreferrer" target="_blank">Source Title</a>: A brief explanation of why this source is credible.</li>\`
-
----
-
-**Begin! Provide only the HTML code in Persian.**
+**شروع کن! فقط کد HTML را ارائه بده.**
 `.trim();
 
   return {
