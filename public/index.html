@@ -176,6 +176,29 @@
         const errorContainer = document.getElementById('error-message');
         const resultsContainer = document.getElementById('results-container');
 
+        function createUserCentricAnalysisCard(analysis) {
+            if (!analysis) return '';
+            return `
+            <div class="result-card">
+                <h2>🧠 تحلیل کاربرمحور (هسته استراتژی)</h2>
+                <h3>قصد کاربر (User Intent)</h3>
+                <p><strong>قصد اصلی:</strong> ${analysis.userIntent.primaryIntent}</p>
+                <p><strong>قصدهای فرعی:</strong></p>
+                <ul>${analysis.userIntent.secondaryIntents.map(item => `<li>${item}</li>`).join('')}</ul>
+                <p><strong>سوالات پنهان کاربر:</strong></p>
+                <ul>${analysis.userIntent.unspokenQuestions.map(item => `<li>${item}</li>`).join('')}</ul>
+
+                <h3>استراتژی سیگنال‌های اعتماد (E-E-A-T)</h3>
+                <ul>
+                    <li><strong>تجربه (Experience):</strong> ${analysis.trustSignalsStrategy.E}</li>
+                    <li><strong>تخصص (Expertise):</strong> ${analysis.trustSignalsStrategy.E2}</li>
+                    <li><strong>اعتبار (Authoritativeness):</strong> ${analysis.trustSignalsStrategy.A}</li>
+                    <li><strong>اعتماد (Trustworthiness):</strong> ${analysis.trustSignalsStrategy.T}</li>
+                </ul>
+            </div>
+            `;
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const topic = input.value.trim();
@@ -215,6 +238,7 @@
         function displayResults(data) {
             resultsContainer.innerHTML = `
                 ${createExecutiveSummaryCard(data.executiveSummary)}
+                ${createUserCentricAnalysisCard(data.userCentricAnalysis)}
                 ${createKeywordsCard(data.keywords)}
                 ${createCompetitorsCard(data.competitors)}
                 ${createContentGuideCard(data.contentGuide)}

@@ -9,23 +9,39 @@ function generateFinalPrompt(topic, unifiedResult) {
   if (!guide || !guide.contentStrategy || !guide.structure) {
     // بازگشت یک پرامپت پیش‌فرض در صورت عدم وجود راهنمای محتوا
     return {
-      prompt: `یک مقاله کامل و جامع درباره "${topic}" بنویس.`,
+      prompt: `یک مقاله کامل و جامع درباره "${topic}" به صورت کد HTML بنویس.`,
       metadata: { generatedFor: topic, targetModel: 'gemini-2.5-pro', language: 'fa', createdAt: new Date().toISOString() }
     };
   }
   
-  const mainBodySections = guide.structure.mainBody.sections.map(s => `"${s.title}"`).join(' و ');
+  const mainBodySections = guide.structure.mainBody.sections.map(s => `<li>${s.title}</li>`).join('');
+  const mainKeywords = unifiedResult.keywords.mainKeywords.map(k => k.keyword).join(', ');
 
+  // پرامپت جدید با دستورالعمل دقیق برای تولید خروجی HTML
   const promptText = `
-یک مقاله سئو شده کامل و جامع درباره "${topic}" بنویس.
-- تعداد کلمات: ${guide.structure.totalWordCount || 2500}
-- کلمات کلیدی اصلی: ${unifiedResult.keywords.mainKeywords.map(k => k.keyword).join(', ')}
-- ساختار:
-  - H1: ${guide.contentStrategy.title}
-  - مقدمه: ${guide.structure.introduction.purpose}
-  - بدنه اصلی: شامل بخش‌های ${mainBodySections}
-  - نتیجه‌گیری: ${guide.structure.conclusion.purpose} با فراخوان به عمل "${guide.structure.conclusion.callToAction}"
-- از فرمت‌بندی مناسب (بولد، لیست، جدول) و 3 منبع معتبر با لینک nofollow استفاده کن.
+**وظیفه اصلی:** تو یک نویسنده محتوay سئو متخصص هستی. یک مقاله کامل، جامع و سئو شده درباره "${topic}" بنویس.
+
+**مهمترین دستورالعمل: خروجی نهایی باید یک کد HTML کامل و تمیز باشد. از هیچ فرمت دیگری مانند Markdown استفاده نکن. تمام متن باید داخل تگ‌های HTML مناسب قرار گیرد.**
+
+**جزئیات محتوا:**
+1.  **عنوان اصلی (تگ <h1>):** ${guide.contentStrategy.title}
+2.  **تعداد کلمات:** حدود ${guide.structure.totalWordCount || 2500} کلمه.
+3.  **کلمات کلیدی اصلی:** کلمات "${mainKeywords}" را به صورت طبیعی در متن، به خصوص در سرفصل‌ها و پاراگراف اول, به کار ببر.
+4.  **ساختار مقاله:**
+    *   **مقدمه (تگ <p>):** با یک قلاب قوی شروع کن که به ${guide.structure.introduction.purpose} بپردازد و اعتماد اولیه کاربر را جلب کند.
+    *   **بدنه اصلی:** از تگ‌های <h2> برای هر یک از سرفصل‌های اصلی زیر استفاده کن. برای زیرمجموعه‌ها از <h3> استفاده کن.
+        <ul>
+            ${mainBodySections}
+        </ul>
+    *   **نتیجه‌گیری:** در بخش پایانی، به ${guide.structure.conclusion.purpose} بپرداز و با یک فراخوان به عمل قوی ("${guide.structure.conclusion.callToAction}") مقاله را تمام کن.
+
+**قوانین فرمت‌بندی HTML:**
+*   برای پاراگراف‌ها از تگ \`<p>\` استفاده کن.
+*   برای لیست‌های شماره‌دار از \`<ol>\` و \`<li>\` و برای لیست‌های نقطه‌ای از \`<ul>\` و \`<li>\` استفاده کن.
+*   برای تاکید روی کلمات مهم، از تگ \`<strong>\` (برای بولد کردن) و \`<em>\` (برای ایتالیک) استفاده کن.
+*   **3 منبع معتبر بین‌المللی:** در انتهای مقاله، سه منبع معتبر (مانند مقالات سایت‌های Moz, Ahrefs, Search Engine Journal) را به صورت یک لیست \`<ul>\` با لینک‌های nofollow اضافه کن. مثال: \`<li><a href="https://example.com" rel="nofollow noopener noreferrer" target="_blank">عنوان منبع</a>: توضیح کوتاه</li>\`
+
+**شروع کن! فقط کد HTML را ارائه بده.**
 `.trim();
 
   return {
@@ -47,30 +63,35 @@ function generateFinalPrompt(topic, unifiedResult) {
  * @returns {object} - آبجکت خلاصه مدیریتی.
  */
 function generateExecutiveSummary(topic, unifiedResult, realCompetitors) {
+  // این بخش برای سازگاری با تحلیل کاربرمحور جدید به‌روز می‌شود
+  const userCentricSummary = (unifiedResult.userCentricAnalysis && unifiedResult.userCentricAnalysis.userIntent) ? 
+    `قصد اصلی کاربر: ${unifiedResult.userCentricAnalysis.userIntent.primaryIntent}` :
+    "تحلیل قصد کاربر انجام نشد.";
+
   return {
     overview: `تحلیل جامع موضوع "${topic}" شامل ${unifiedResult.keywords.mainKeywords.length} کلمه کلیدی اصلی و ${realCompetitors.length} رقیب اصلی`,
     keyFindings: [
+      userCentricSummary,
       `کلمات کلیدی اصلی: ${unifiedResult.keywords.mainKeywords.slice(0, 3).map(k => k.keyword).join(', ')}`,
       `سطح رقابت: ${unifiedResult.competitors.marketAnalysis.competitionLevel || 'نامشخص'}`,
-      `فرصت‌های شناسایی شده: ${unifiedResult.competitors.marketAnalysis.opportunities.length} مورد`,
       `تعداد کلمات پیشنهادی محتوا: ${unifiedResult.contentGuide.structure.totalWordCount || 2500}`
     ],
     recommendations: [
-      "تمرکز بر کلمات کلیدی با رقابت کمتر",
-      "استفاده از شکاف‌های محتوایی رقبا",
-      "بهینه‌سازی برای جستجوهای محلی",
-      "تولید محتوای عمیق‌تر از رقبا"
+      "پاسخ مستقیم به سوالات پنهان کاربر",
+      "استفاده از سیگنال‌های اعتماد (E-E-A-T) در محتوا",
+      "تمرکز بر کلمات کلیدی طولانی برای هدف‌گیری دقیق‌تر",
+      "ایجاد محتوای عمیق‌تر و کاربردی‌تر از رقبا"
     ],
     nextSteps: [
-      "استفاده از پرامپت نهایی برای تولید محتوا",
-      "بررسی و تنظیم محتوا بر اساس راهنما",
+      "کپی کردن پرامپت نهایی و تولید مقاله HTML",
+      "بررسی و تنظیم محتوای تولید شده",
       "پیاده‌سازی استراتژی‌های سئو پیشنهادی",
       "نظارت بر عملکرد و بهینه‌سازی مداوم"
     ],
     competitiveAdvantage: [
-      "محتوای جامع‌تر",
-      "رویکرد عملی‌تر",
-      "اطلاعات به‌روزتر"
+      "محتوای کاربرمحور",
+      "ساختار مبتنی بر E-E-A-T",
+      "اطلاعات به‌روز و عملی"
     ]
   };
 }
