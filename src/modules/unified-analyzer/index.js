@@ -109,7 +109,7 @@ ${competitorList}
         model: 'gemini-2.5-pro',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.5,
-        max_tokens: 4096,
+        max_tokens: 8192,
         response_format: { type: "json_object" }
       }, {
         headers: {
