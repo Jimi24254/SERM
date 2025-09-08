@@ -66,15 +66,15 @@ app.post('/analyze', async (req, res) => {
     // مرحله ۱: اجرای تحلیل استراتژیک
     const strategicResult = await mainInstance.start(topic);
     
-    // مرحله ۲: تولید پرامپت نهایی با استفاده از نتیجه مرحله ۱ (بروزرسانی شده برای دو بخشی، بدون فراخوانی AI)
-    const finalPrompt = promptGenerator.generate(strategicResult, topic);
+    // مرحله ۲: تولید دو پرامپت جداگانه
+    const prompts = promptGenerator.generate(strategicResult, topic);
     
     // ارسال هر دو نتیجه در پاسخ نهایی
     res.json({
       success: true,
       data: {
         strategicAnalysis: strategicResult,
-        finalPromptForWriter: finalPrompt
+        finalPromptForWriter: prompts // حالا object با contentPrompt و imagePromptsPrompt
       },
       processingTime: new Date().toISOString()
     });
@@ -102,15 +102,15 @@ app.get('/analyze/:topic', async (req, res) => {
     // مرحله ۱: اجرای تحلیل استراتژیک
     const strategicResult = await mainInstance.start(decodedTopic);
 
-    // مرحله ۲: تولید پرامپت نهایی (بروزرسانی شده برای دو بخشی، بدون فراخوانی AI)
-    const finalPrompt = promptGenerator.generate(strategicResult, decodedTopic);
+    // مرحله ۲: تولید دو پرامپت جداگانه
+    const prompts = promptGenerator.generate(strategicResult, decodedTopic);
     
     // ارسال هر دو نتیجه در پاسخ نهایی
     res.json({
       success: true,
       data: {
         strategicAnalysis: strategicResult,
-        finalPromptForWriter: finalPrompt
+        finalPromptForWriter: prompts // حالا object با contentPrompt و imagePromptsPrompt
       },
       processingTime: new Date().toISOString()
     });
@@ -185,7 +185,7 @@ app.get('/quick-test', async (req, res) => {
     const topic = 'تست سریع سئو';
     
     const strategicResult = await mainInstance.start(topic);
-    const finalPrompt = promptGenerator.generate(strategicResult, topic);
+    const prompts = promptGenerator.generate(strategicResult, topic);
     
     res.json({
       success: true,
@@ -195,7 +195,7 @@ app.get('/quick-test', async (req, res) => {
         keywordsFound: strategicResult.keywords?.totalAnalyzed || 0,
         competitorsAnalyzed: strategicResult.competitors?.totalAnalyzed || 0,
         contentGuideGenerated: !!strategicResult.contentGuide,
-        finalPromptGenerated: !!finalPrompt
+        finalPromptGenerated: !!prompts
       },
       executiveSummary: strategicResult.executiveSummary,
       timestamp: new Date().toISOString()

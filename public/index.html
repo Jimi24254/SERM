@@ -205,7 +205,7 @@
 
         function displayResults(data) {
             const sa = data?.strategicAnalysis || {};
-            const fp = data?.finalPromptForWriter || '';
+            const fp = data?.finalPromptForWriter || {};
 
             resultsContainer.innerHTML = `
                 ${createExecutiveSummaryCard(sa.executiveSummary)}
@@ -310,19 +310,17 @@
             `;
         }
 
-        function createFinalPromptCard(promptText) {
-            // بروزرسانی برای نمایش دو بخشی (حفظ ساختار قبلی)
-            const sections = promptText.split('**Section 2: Image Generation Prompts**'); // جدا کردن بر اساس marker
-            const section1 = sections[0]?.trim() || '';
-            const section2 = sections[1]?.trim() || '';
+        function createFinalPromptCard(promptObj) {
+            const contentPrompt = promptObj?.contentPrompt || '';
+            const imagePromptsPrompt = promptObj?.imagePromptsPrompt || '';
 
             return `
             <div class="result-card">
                 <h2>🤖 پرامپت نهایی برای هوش مصنوعی</h2>
-                <h3>بخش ۱: دستورالعمل نوشتن کد HTML مقاله</h3>
-                <pre><code>${section1}</code></pre>
-                <h3>بخش ۲: پرامپت‌های تولید تصاویر</h3>
-                <pre><code>${section2}</code></pre>
+                <h3>بخش ۱: پرامپت تولید مقاله HTML</h3>
+                <pre><code>${contentPrompt}</code></pre>
+                <h3>بخش ۲: پرامپت تولید لیست پرامپت‌های تصویر</h3>
+                <pre><code>${imagePromptsPrompt}</code></pre>
             </div>
             `;
         }
