@@ -4,7 +4,6 @@ require('dotenv').config();
 
 const Main = require('./core/main');
 const PromptGenerator = require('./modules/prompt-generator');
-const { GoogleGenerativeAI } = require('@google/generative-ai'); // اضافه جدید برای callGemini
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -16,26 +15,13 @@ app.use(express.urlencoded({ extended: true }));
 
 // ایجاد نمونه اصلی SERM و PromptGenerator
 let mainInstance;
-const promptGenerator = new PromptGenerator(); // <-- تغییر جدید: ساخت یک نمونه از ژنراتور پرامپت
+const promptGenerator = new PromptGenerator();
 try {
   mainInstance = new Main();
   console.log('✅ SERM Engine آماده است');
 } catch (error) {
   console.error('❌ خطا در راه‌اندازی SERM:', error.message);
   process.exit(1);
-}
-
-// تابع جدید برای فراخوانی Gemini (اضافه شده برای ارسال پرامپت و گرفتن خروجی دو بخشی)
-async function callGemini(prompt) {
-  try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' }); // مدل پیشنهادی (اگر 2.5 موجوده، تغییر بده)
-    const result = await model.generateContent(prompt);
-    return result.response.text(); // خروجی متنی دو بخشی
-  } catch (error) {
-    console.error('Error calling Gemini:', error);
-    throw new Error('Failed to generate content from AI');
-  }
 }
 
 // Routes
@@ -80,18 +66,15 @@ app.post('/analyze', async (req, res) => {
     // مرحله ۱: اجرای تحلیل استراتژیک
     const strategicResult = await mainInstance.start(topic);
     
-    // مرحله ۲: تولید پرامپت نهایی با استفاده از نتیجه مرحله ۱ (حفظ شده)
+    // مرحله ۲: تولید پرامپت نهایی با استفاده از نتیجه مرحله ۱ (بروزرسانی شده برای دو بخشی، بدون فراخوانی AI)
     const finalPrompt = promptGenerator.generate(strategicResult, topic);
     
-    // مرحله جدید: ارسال پرامپت به Gemini برای تولید خروجی دو بخشی
-    const aiResponse = await callGemini(finalPrompt);
-    
-    // ارسال هر دو نتیجه در پاسخ نهایی (بروزرسانی شده با aiResponse)
+    // ارسال هر دو نتیجه در پاسخ نهایی
     res.json({
       success: true,
       data: {
         strategicAnalysis: strategicResult,
-        finalPromptForWriter: aiResponse // حالا دو بخشی
+        finalPromptForWriter: finalPrompt
       },
       processingTime: new Date().toISOString()
     });
@@ -119,18 +102,15 @@ app.get('/analyze/:topic', async (req, res) => {
     // مرحله ۱: اجرای تحلیل استراتژیک
     const strategicResult = await mainInstance.start(decodedTopic);
 
-    // مرحله ۲: تولید پرامپت نهایی (حفظ شده)
+    // مرحله ۲: تولید پرامپت نهایی (بروزرسانی شده برای دو بخشی، بدون فراخوانی AI)
     const finalPrompt = promptGenerator.generate(strategicResult, decodedTopic);
     
-    // مرحله جدید: ارسال پرامپت به Gemini برای تولید خروجی دو بخشی
-    const aiResponse = await callGemini(finalPrompt);
-    
-    // ارسال هر دو نتیجه در پاسخ نهایی (بروزرسانی شده با aiResponse)
+    // ارسال هر دو نتیجه در پاسخ نهایی
     res.json({
       success: true,
       data: {
         strategicAnalysis: strategicResult,
-        finalPromptForWriter: aiResponse // حالا دو بخشی
+        finalPromptForWriter: finalPrompt
       },
       processingTime: new Date().toISOString()
     });
@@ -207,7 +187,6 @@ app.get('/quick-test', async (req, res) => {
     const strategicResult = await mainInstance.start(topic);
     const finalPrompt = promptGenerator.generate(strategicResult, topic);
     
-    // بروزرسانی اختیاری: اگر می‌خوای در quick-test هم دو بخشی باشه، می‌تونی اضافه کنی (اما حفظ فعلی)
     res.json({
       success: true,
       message: 'تست سریع با موفقیت انجام شد',

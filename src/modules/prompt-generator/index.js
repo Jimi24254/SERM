@@ -19,61 +19,71 @@ class PromptGenerator {
         const { keywords, contentGuide } = analysisResult;
         const { structure } = contentGuide;
 
-        // محاسبه تعداد تصاویر بر اساس طول مقاله (جدید اما اختیاری و حفظ ساختار فعلی)
+        // محاسبه تعداد تصاویر (جدید اما اختیاری، بر اساس طول مقاله)
         const wordCount = structure.totalWordCount || 2500;
-        const imageCount = Math.ceil(wordCount / 500); // مثلاً 1 تصویر هر 500 کلمه
+        const imageCount = Math.ceil(wordCount / 500); // 1 تصویر هر 500 کلمه
 
-        // پرامپت دو بخشی (بروزرسانی شده به انگلیسی برای دقت، اما خروجی فارسی - ساختار فعلی حفظ شده)
+        // پرامپت دو بخشی (بروزرسانی شده - ساختار قبلی حفظ شده، اما حالا دو بخش مجزا)
         let prompt = `
-You are an expert SEO content writer specializing in Persian content. Write a comprehensive ${wordCount}-word SEO-optimized article in Persian about "${topic}". Focus on keywords like "${keywords.mainKeywords.map(k => k.keyword).join(', ')}" with 1.5-2% density, and secondary keywords with 0.8-1.2% density. Include:
-- Structure: Introduction (${structure.introduction.purpose}), main sections as detailed below, conclusion (${structure.conclusion.purpose}) with CTA "${structure.conclusion.callToAction}".
-- Formatting: Use <h1> for main title "${contentGuide.contentStrategy.title}", <h2> for main sections, <h3> for subsections, <p> for paragraphs, <strong> and <em> for emphasis, <ol>/<ul> for lists, tables, emojis.
-- Images: Place ${imageCount} relevant images in sections (use placeholder src like "/images/[descriptive-name-slug].jpg" with Persian alt text).
-- Internal links: Natural links to related internal content.
-- External sources: 3 credible international sources with nofollow links and descriptions at the end in a <ul>.
-- Unique, practical content with Iranian examples.
-- Meta description for context: "${contentGuide.contentStrategy.metaDescription}".
+**وظیفه اصلی:** تو یک نویسنده محتوای سئو متخصص و خلاق هستی. یک مقاله کامل، جامع و سئو شده درباره "${topic}" بنویس.
 
 Output in two separate sections, clearly marked:
-Section 1: The full, clean HTML code of the article (no Markdown, just pure HTML with <html><head><body> etc.).
+Section 1: Instructions for writing the full HTML code of the article.
+Section 2: Prompts for generating images (in English, for any AI image generator like Gemini Imagen or Midjourney).
 
-Section 2: For each image in the HTML, provide a detailed English prompt for any AI image generator (e.g., Gemini Imagen, Midjourney). In each prompt, specify:
-- Resolution: Optimized for web articles (e.g., 800x600 pixels for horizontal images to fit content width of 800-1000px, or 600x800 for vertical; ensure scalable and responsive-friendly aspect ratio like 16:9 or 4:3).
-- Style: Professional infographic or illustrative, high-quality HD, with colors like blue and green for SEO themes.
-- Details: Make it original, relevant to the section (e.g., include charts, icons, or Persian text if needed), creative, and precise for best results.
-
-**Detailed structure instructions for main body (use <h2> and <h3>):**
+**Section 1: Instructions for Article HTML**
+- مهمترین دستورالعمل: خروجی نهایی باید یک کد HTML کامل و تمیز باشد. از هیچ فرمت دیگری مانند Markdown استفاده نکن. تمام متن باید داخل تگ‌های HTML مناسب قرار گیرد.
+- عنوان اصلی (تگ <h1>): ${contentGuide.contentStrategy.title}
+- توضیحات متا (برای درک بهتر زمینه): ${contentGuide.contentStrategy.metaDescription}
+- تعداد کلمات: حدود ${wordCount} کلمه.
+- کلمات کلیدی: کلمات کلیدی اصلی مانند "${keywords.mainKeywords.map(k => k.keyword).join(', ')}" و کلمات فرعی را به صورت طبیعی در متن، به خصوص در سرفصل‌ها و پاراگراف‌های کلیدی, به کار ببر.
+- ساختار دقیق و دستورالعمل‌های مقاله:
+  - مقدمه: ${structure.introduction.purpose}
+  - بدنه اصلی: بر اساس سرفصل‌ها و دستورالعمل‌های دقیق زیر عمل کن. برای هر سرفصل اصلی از <h2> و برای زیرمجموعه‌ها از <h3> استفاده کن.
 `;
 
         structure.mainBody.sections.forEach((section, index) => {
             prompt += `
 ---
-### Section ${index + 1}: ${section.title}
-*   **Main purpose:** ${section.purpose}
+### سرفصل ${index + 1}: ${section.title}
+*   هدف اصلی این بخش: ${section.purpose}
 `;
 
             if (section.internalLinkOpportunities && section.internalLinkOpportunities.length > 0) {
-                prompt += `*   **Internal linking instructions:**\n`;
+                prompt += `*   دستورالعمل لینک‌سازی داخلی:\n`;
                 section.internalLinkOpportunities.forEach(link => {
-                    prompt += `    *   Naturally link the anchor text **"${link.anchorTextSuggestion}"** to an article about **"${link.linkToTopic}"** (use the content bank to find the best URL).\n`;
+                    prompt += `    *   در این بخش، به صورت طبیعی عبارت کلیدی **"${link.anchorTextSuggestion}"** را به مقاله‌ای با موضوع کلی **"${link.linkToTopic}"** لینک بده. (از بانک محتوایی که در اختیارت قرار گرفته، بهترین URL را برای این موضوع پیدا کن).\n`;
                 });
             }
 
             if (section.visualElements && section.visualElements.length > 0) {
-                prompt += `*   **Image placement instructions (handle in Section 2 for prompts):**\n`;
+                prompt += `*   دستورالعمل تصویرگذاری (جزئیات در Section 2):\n`;
                 section.visualElements.forEach(visual => {
-                    prompt += `    *   **Exact placement:** ${visual.placementSuggestion}\n`;
-                    prompt += `    *   Use <figure> with <img> tag.\n`;
-                    prompt += `    *   **Alt text (alt attribute):** \`${visual.suggestedAltText}\`\n`;
-                    prompt += `    *   **Suggested filename (src attribute):** \`/images/${visual.suggestedFilename}\`\n`;
-                    // توجه: imageGenerationPrompt فعلی به Section 2 منتقل می‌شه، اما در پرامپت نهایی در Section 2 استفاده می‌شه
+                    prompt += `    *   مکان دقیق: ${visual.placementSuggestion}\n`;
+                    prompt += `    *   یک تگ \`<figure>\` در این مکان قرار بده و داخل آن از تگ \`<img>\` استفاده کن.\n`;
+                    prompt += `    *   متن Alt تصویر (ویژگی alt): \`${visual.suggestedAltText}\`\n`;
+                    prompt += `    *   نام فایل پیشنهادی (ویژگی src): \`/images/${visual.suggestedFilename}\`\n`;
                 });
             }
         });
 
         prompt += `
 ---
-Ensure the article is 100% unique, engaging, and SEO-friendly. Start writing!
+- نتیجه‌گیری: ${structure.conclusion.purpose}. در انتها با یک فراخوان به عمل قوی مانند "${structure.conclusion.callToAction}" مقاله را به پایان برسان.
+- قوانین فرمت‌بندی نهایی HTML:
+  - برای پاراگراف‌ها از تگ <p> استفاده کن.
+  - برای لیست‌های شماره‌دار از <ol> و <li> و برای لیست‌های نقطه‌ای از <ul> و <li> استفاده کن.
+  - برای تاکید روی کلمات مهم، از تگ <strong> و <em> استفاده کن.
+  - **3 منبع معتبر بین‌المللی:** در انتهای مقاله، سه منبع معتبر را به صورت یک لیست <ul> با لینک‌های nofollow اضافه کن. مثال: <li><a href="https://example.com" rel="nofollow noopener noreferrer" target="_blank">عنوان منبع</a>: توضیح کوتاه درباره چرایی اعتبار این منبع.</li>
+
+**Section 2: Image Generation Prompts**
+- برای هر تصویر در مقاله (${imageCount} تصویر)، یک پرامپت انگلیسی دقیق بنویس که بتوان با هر ابزار تولید تصویر (مانند Gemini Imagen یا Midjourney) استفاده کرد.
+- در هر پرامپت، مشخص کن:
+  - Resolution: Optimized for web (e.g., 800x600 pixels for horizontal to fit content width of 800-1000px, or 600x800 for vertical; ensure scalable aspect ratio like 16:9 or 4:3).
+  - Style: Professional infographic or illustrative, high-quality HD, with colors like blue and green for SEO themes.
+  - Details: Original, relevant to the section (e.g., charts, icons, Persian elements if needed), creative, and precise.
+
+شروع کن! فقط خروجی دو بخشی را ارائه بده.
 `;
 
         return prompt;
