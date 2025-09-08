@@ -29,7 +29,7 @@ try {
 async function callGemini(prompt) {
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' }); // مدل پیشنهادی (اگر 2.5 موجوده، تغییر بده)
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' }); // مدل پیشنهادی (اگر 2.5 موجوده، تغییر بده)
     const result = await model.generateContent(prompt);
     return result.response.text(); // خروجی متنی دو بخشی
   } catch (error) {
