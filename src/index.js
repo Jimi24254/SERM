@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const Main = require('./core/main');
-const PromptGenerator = require('./src/modules/prompt-generator'); // <-- تغییر جدید: ایمپورت کردن ماژول جدید
+const PromptGenerator = require('./modules/prompt-generator');
 
 const app = express();
 const port = process.env.PORT || 3000;
