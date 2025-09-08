@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const Main = require('./core/main');
+const PromptGenerator = require('./src/modules/prompt-generator'); // <-- تغییر جدید: ایمپورت کردن ماژول جدید
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -12,8 +13,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ایجاد نمونه اصلی SERM
+// ایجاد نمونه اصلی SERM و PromptGenerator
 let mainInstance;
+const promptGenerator = new PromptGenerator(); // <-- تغییر جدید: ساخت یک نمونه از ژنراتور پرامپت
 try {
   mainInstance = new Main();
   console.log('✅ SERM Engine آماده است');
@@ -61,11 +63,19 @@ app.post('/analyze', async (req, res) => {
 
     console.log(`🔍 درخواست تحلیل موضوع: ${topic}`);
     
-    const result = await mainInstance.start(topic);
+    // مرحله ۱: اجرای تحلیل استراتژیک
+    const strategicResult = await mainInstance.start(topic);
     
+    // <-- تغییر جدید: مرحله ۲: تولید پرامپت نهایی با استفاده از نتیجه مرحله ۱
+    const finalPrompt = promptGenerator.generate(strategicResult, topic);
+    
+    // <-- تغییر جدید: ارسال هر دو نتیجه در پاسخ نهایی
     res.json({
       success: true,
-      data: result,
+      data: {
+        strategicAnalysis: strategicResult,
+        finalPromptForWriter: finalPrompt
+      },
       processingTime: new Date().toISOString()
     });
 
@@ -89,11 +99,19 @@ app.get('/analyze/:topic', async (req, res) => {
     
     console.log(`🔍 درخواست تحلیل موضوع: ${decodedTopic}`);
     
-    const result = await mainInstance.start(decodedTopic);
+    // مرحله ۱: اجرای تحلیل استراتژیک
+    const strategicResult = await mainInstance.start(decodedTopic);
+
+    // <-- تغییر جدید: مرحله ۲: تولید پرامپت نهایی
+    const finalPrompt = promptGenerator.generate(strategicResult, decodedTopic);
     
+    // <-- تغییر جدید: ارسال هر دو نتیجه در پاسخ نهایی
     res.json({
       success: true,
-      data: result,
+      data: {
+        strategicAnalysis: strategicResult,
+        finalPromptForWriter: finalPrompt
+      },
       processingTime: new Date().toISOString()
     });
 
@@ -164,20 +182,22 @@ app.get('/config', (req, res) => {
 app.get('/quick-test', async (req, res) => {
   try {
     console.log('🧪 اجرای تست سریع...');
+    const topic = 'تست سریع سئو';
     
-    const result = await mainInstance.start('تست سریع سئو');
+    const strategicResult = await mainInstance.start(topic);
+    const finalPrompt = promptGenerator.generate(strategicResult, topic);
     
     res.json({
       success: true,
       message: 'تست سریع با موفقیت انجام شد',
       summary: {
-        topic: result.topic,
-        keywordsFound: result.keywords?.totalAnalyzed || 0,
-        competitorsAnalyzed: result.competitors?.totalAnalyzed || 0,
-        contentGuideGenerated: !!result.contentGuide,
-        finalPromptGenerated: !!result.finalPrompt
+        topic: strategicResult.topic,
+        keywordsFound: strategicResult.keywords?.totalAnalyzed || 0,
+        competitorsAnalyzed: strategicResult.competitors?.totalAnalyzed || 0,
+        contentGuideGenerated: !!strategicResult.contentGuide,
+        finalPromptGenerated: !!finalPrompt
       },
-      executiveSummary: result.executiveSummary,
+      executiveSummary: strategicResult.executiveSummary,
       timestamp: new Date().toISOString()
     });
 
