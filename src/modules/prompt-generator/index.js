@@ -13,7 +13,7 @@ class PromptGenerator {
      * تابع اصلی برای تولید پرامپت
      * @param {object} analysisResult - آبجکت JSON خروجی از UnifiedAnalyzer
      * @param {string} topic - موضوع اصلی که تحلیل شده است
-     * @returns {object} - آبجکت با دو پرامپت: contentPrompt (برای تولید مقاله HTML) و imagePromptsPrompt (برای تولید لیست پرامپت‌های تصویر)
+     * @returns {object} - آبجکت با contentPrompt (برای تولید مقاله HTML) و imagePromptsList (لیست مستقیم پرامپت‌های آماده برای تصاویر)
      */
     generate(analysisResult, topic) {
         const { keywords, contentGuide } = analysisResult;
@@ -79,28 +79,37 @@ class PromptGenerator {
 **شروع کن! فقط کد HTML را ارائه بده.**
 `;
 
-        // پرامپت دوم: پرامپت جدید برای بخش 2 (برای تولید لیست پرامپت‌های تصویر آماده)
-        let imagePromptsPrompt = `
-You are an expert in generating detailed image prompts for AI tools. Based on the following article structure for topic "${topic}", create exactly ${imageCount} ready-to-use English prompts for generating images. Each prompt should be for one specific image in the article sections.
+        // لیست مستقیم پرامپت‌های تصویر (جدید: مستقیم تولید می‌شه، انگلیسی، با جزئیات)
+        let imagePromptsList = '';
+        let currentImageIndex = 1;
 
-Article details for reference:
-- Total images needed: ${imageCount} (one for each major section or as suggested).
-- Structure: Introduction, main sections: ${structure.mainBody.sections.map(s => s.title).join(', ')}, Conclusion.
+        // ابتدا بر اساس visualElements خاص از بخش‌ها پرامپت بساز
+        structure.mainBody.sections.forEach((section) => {
+            if (section.visualElements && section.visualElements.length > 0) {
+                section.visualElements.forEach((visual) => {
+                    if (currentImageIndex <= imageCount) {
+                        imagePromptsList += `Image ${currentImageIndex} for section "${section.title}": Create a professional HD infographic illustrating ${visual.suggestedAltText} related to ${topic}, with aspect ratio 16:9, resolution 800x450 pixels (horizontal to fit content width of 800-1000px), in blue and green colors, including charts and icons – ensure all text on the image is in English (e.g., "Best SEO Methods") for accurate generation, no Persian text to avoid errors.\n\n`;
+                        currentImageIndex++;
+                    }
+                });
+            }
+        });
 
-For each prompt, include:
-- Resolution: Optimized for web articles (e.g., 800x600 pixels for horizontal images to fit content width of 800-1000px, or 600x800 for vertical; ensure scalable and responsive-friendly aspect ratio like 16:9 or 4:3).
-- Style: Professional infographic or illustrative, high-quality HD, with colors like blue and green for SEO themes.
-- Details: Make it original, relevant to the section (e.g., include charts, icons, or Persian text if needed), creative, and precise for best results.
+        // اگر تعداد کمتر از imageCount بود، پرامپت‌های عمومی اضافه کن (برای تکمیل)
+        while (currentImageIndex <= imageCount) {
+            imagePromptsList += `Image ${currentImageIndex} (general for article): Create a illustrative HD graphic summarizing key points of ${topic}, with aspect ratio 4:3, resolution 600x800 pixels (vertical for better scrolling), professional style with blue and green tones, including English text overlays like "SEO Tips" – avoid any non-English text for best results.\n\n`;
+            currentImageIndex++;
+        }
 
-Output as a numbered list (1 to ${imageCount}), each item a complete prompt ready to copy-paste into an AI image generator like Gemini Imagen or Midjourney.
+        // اگر هیچ تصویری نبود، یک پیام ساده بگذار
+        if (imagePromptsList === '') {
+            imagePromptsList = 'No specific images suggested in analysis. Consider adding manually.';
+        }
 
-Start generating!
-`;
-
-        // بازگشت object با دو پرامپت
+        // بازگشت object با دو بخش
         return {
             contentPrompt: contentPrompt, // بخش 1: پرامپت تولید مقاله HTML (بدون تغییر)
-            imagePromptsPrompt: imagePromptsPrompt // بخش 2: پرامپت تولید لیست پرامپت‌های تصویر
+            imagePromptsList: imagePromptsList.trim() // بخش 2: لیست مستقیم پرامپت‌های آماده (انگلیسی، با جزئیات)
         };
     }
 }

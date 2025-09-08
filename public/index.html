@@ -311,17 +311,17 @@
         }
 
         function createFinalPromptCard(promptObj) {
-            // بروزرسانی برای نمایش object (بدون split - مستقیم دو فیلد رو نمایش می‌ده)
+            // بروزرسانی برای نمایش object (مستقیم دو فیلد رو نمایش می‌ده)
             const contentPrompt = promptObj?.contentPrompt || '';
-            const imagePromptsPrompt = promptObj?.imagePromptsPrompt || '';
+            const imagePromptsList = promptObj?.imagePromptsList || '';
 
             return `
             <div class="result-card">
                 <h2>🤖 پرامپت نهایی برای هوش مصنوعی</h2>
                 <h3>بخش ۱: پرامپت تولید مقاله HTML</h3>
                 <pre><code>${contentPrompt}</code></pre>
-                <h3>بخش ۲: پرامپت تولید لیست پرامپت‌های تصویر</h3>
-                <pre><code>${imagePromptsPrompt}</code></pre>
+                <h3>بخش ۲: لیست پرامپت‌های آماده برای تولید تصاویر</h3>
+                <pre><code>${imagePromptsList}</code></pre>
             </div>
             `;
         }
