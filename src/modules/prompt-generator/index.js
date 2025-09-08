@@ -88,7 +88,7 @@ class PromptGenerator {
             if (section.visualElements && section.visualElements.length > 0) {
                 section.visualElements.forEach((visual) => {
                     if (currentImageIndex <= imageCount) {
-                        imagePromptsList += `Image ${currentImageIndex} for section "${section.title}": Create a professional HD infographic illustrating ${visual.suggestedAltText} related to ${topic}, with aspect ratio 16:9, resolution 800x450 pixels (horizontal to fit content width of 800-1000px), in blue and green colors, including charts and icons – ensure all text on the image is in English (e.g., "Best SEO Methods") for accurate generation, no Persian text to avoid errors.\n\n`;
+                        imagePromptsList += `Image ${currentImageIndex} for section "${section.title}": Create a professional HD infographic illustrating ${visual.suggestedAltText} related to ${topic}, with aspect ratio 16:9, resolution 800x450 pixels (horizontal to fit content width of 800-1000px),  including charts and icons – ensure all text on the image is in English  for accurate generation, no Persian text to avoid errors.\n\n`;
                         currentImageIndex++;
                     }
                 });
@@ -97,7 +97,7 @@ class PromptGenerator {
 
         // اگر تعداد کمتر از imageCount بود، پرامپت‌های عمومی اضافه کن (برای تکمیل)
         while (currentImageIndex <= imageCount) {
-            imagePromptsList += `Image ${currentImageIndex} (general for article): Create a illustrative HD graphic summarizing key points of ${topic}, with aspect ratio 4:3, resolution 600x800 pixels (vertical for better scrolling), professional style with blue and green tones, including English text overlays like "SEO Tips" – avoid any non-English text for best results.\n\n`;
+            imagePromptsList += `Image ${currentImageIndex} (general for article): Create a illustrative HD graphic summarizing key points of ${topic}, with aspect ratio 16:9, resolution 800x450 pixels (horizontal to fit content width of 800-1000px), professional style , including English text overlays  – avoid any non-English text for best results.\n\n`;
             currentImageIndex++;
         }
 
