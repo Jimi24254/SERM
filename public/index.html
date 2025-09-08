@@ -1,213 +1,324 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SERM - موتور تحلیل سئو</title>
-<style>
-    :root {
-        --primary-color: #007bff;
-        --secondary-color: #6c757d;
-        --background-color: #f8f9fa;
-        --card-background: #ffffff;
-        --text-color: #212529;
-        --border-color: #dee2e6;
-        --box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--background-color); color: var(--text-color); margin: 0; padding: 20px; line-height: 1.6; }
-    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
-    header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; }
-    header h1 { color: var(--primary-color); margin: 0; }
-    header p { color: var(--secondary-color); }
-    #analysis-form { display: flex; gap: 10px; margin-bottom: 30px; }
-    #topic-input { flex-grow: 1; padding: 12px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 8px; }
-    #submit-btn { padding: 12px 25px; font-size: 16px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
-    #submit-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; }
-    #submit-btn:hover:not(:disabled) { background-color: #0056b3; }
-    .loader { display: none; text-align: center; padding: 40px; }
-    .spinner { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .error-message { display: none; text-align: center; background-color: #f8d7da; color: #721c24; padding: 15px; border: 1px solid #f5c6cb; border-radius: 8px; }
-    .result-card { background-color: var(--card-background); border: 1px solid var(--border-color); border-radius: 8px; padding: 25px; margin-bottom: 25px; box-shadow: var(--box-shadow); }
-    .result-card h2 { margin-top: 0; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px; }
-    .result-card h3 { color: var(--secondary-color); }
-    ul { padding-right: 20px; }
-    li { margin-bottom: 8px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { text-align: right; padding: 10px; border-bottom: 1px solid var(--border-color); }
-    th { background-color: #f2f2f2; }
-    pre { background-color: #e9ecef; padding: 15px; border-radius: 8px; white-space: pre-wrap; word-wrap: break-word; font-family: "Courier New", Courier, monospace; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SERM - موتور تحلیل سئو</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+        header h1 {
+            color: var(--primary-color);
+            margin: 0;
+        }
+        header p {
+            color: var(--secondary-color);
+        }
+        #analysis-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        #topic-input {
+            flex-grow: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        #submit-btn {
+            padding: 12px 25px;
+            font-size: 16px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #submit-btn:disabled {
+            background-color: var(--secondary-color);
+            cursor: not-allowed;
+        }
+        #submit-btn:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-message {
+            display: none;
+            text-align: center;
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+        }
+        .result-card {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: var(--box-shadow);
+        }
+        .result-card h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .result-card h3 {
+            color: var(--secondary-color);
+        }
+        ul {
+            padding-right: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            text-align: right;
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        pre {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: "Courier New", Courier, monospace;
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-<header>
-    <h1>🚀 SERM - موتور تحلیل سئو</h1>
-    <p>موضوع مورد نظر خود را برای تحلیل وارد کنید</p>
-</header>
 
-<form id="analysis-form">
-    <input type="text" id="topic-input" placeholder="مثال: بهترین روش سئو چیست؟" required>
-    <button type="submit" id="submit-btn">تحلیل کن</button>
-</form>
+    <div class="container">
+        <header>
+            <h1>🚀 SERM - موتور تحلیل سئو</h1>
+            <p>موضوع مورد نظر خود را برای تحلیل وارد کنید</p>
+        </header>
 
-<div class="loader" id="loader">
-    <div class="spinner"></div>
-    <p>در حال تحلیل... این فرآیند ممکن است تا ۳۰ ثانیه طول بکشد.</p>
-</div>
+        <form id="analysis-form">
+            <input type="text" id="topic-input" placeholder="مثال: بهترین روش سئو چیست؟" required>
+            <button type="submit" id="submit-btn">تحلیل کن</button>
+        </form>
 
-<div class="error-message" id="error-message"></div>
-<div id="results-container"></div>
-</div>
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>در حال تحلیل... این فرآیند ممکن است تا ۳۰ ثانیه طول بکشد.</p>
+        </div>
 
-<script>
-const form = document.getElementById('analysis-form');
-const input = document.getElementById('topic-input');
-const submitBtn = document.getElementById('submit-btn');
-const loader = document.getElementById('loader');
-const errorContainer = document.getElementById('error-message');
-const resultsContainer = document.getElementById('results-container');
+        <div class="error-message" id="error-message"></div>
+        <div id="results-container"></div>
+    </div>
 
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const topic = input.value.trim();
-    if (!topic) return;
+    <script>
+        const form = document.getElementById('analysis-form');
+        const input = document.getElementById('topic-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const loader = document.getElementById('loader');
+        const errorContainer = document.getElementById('error-message');
+        const resultsContainer = document.getElementById('results-container');
 
-    submitBtn.disabled = true;
-    loader.style.display = 'block';
-    errorContainer.style.display = 'none';
-    resultsContainer.innerHTML = '';
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const topic = input.value.trim();
+            if (!topic) return;
 
-    try {
-        const response = await fetch(`/analyze/${encodeURIComponent(topic)}`);
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || 'خطایی در سرور رخ داد.');
+            submitBtn.disabled = true;
+            loader.style.display = 'block';
+            errorContainer.style.display = 'none';
+            resultsContainer.innerHTML = '';
+
+            try {
+                const response = await fetch(`/analyze/${encodeURIComponent(topic)}`);
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'خطایی در سرور رخ داد.');
+                }
+                const result = await response.json();
+                displayResults(result.data);
+            } catch (error) {
+                console.error('Error during analysis:', error);
+                errorContainer.innerText = `خطا: ${error.message}`;
+                errorContainer.style.display = 'block';
+            } finally {
+                loader.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+
+        function displayResults(data) {
+            const sa = data.strategicAnalysis || {};
+            const fp = data.finalPromptForWriter || '';
+
+            resultsContainer.innerHTML = `
+                ${createExecutiveSummaryCard(sa.executiveSummary)}
+                ${createUserCentricAnalysisCard(sa.userCentricAnalysis)}
+                ${createKeywordsCard(sa.keywords)}
+                ${createCompetitorsCard(sa.competitors)}
+                ${createContentGuideCard(sa.contentGuide)}
+                ${createFinalPromptCard(fp)}
+            `;
         }
-        const result = await response.json();
-        displayResults(result.data);
-    } catch (error) {
-        console.error('Error during analysis:', error);
-        errorContainer.innerText = `خطا: ${error.message}`;
-        errorContainer.style.display = 'block';
-    } finally {
-        loader.style.display = 'none';
-        submitBtn.disabled = false;
-    }
-});
 
-function displayResults(data) {
-    // هماهنگی با ساختار جدید API
-    const sa = data.strategicAnalysis || {};
-    const fp = data.finalPromptForWriter || '';
+        function createExecutiveSummaryCard(summary) {
+            if (!summary || typeof summary !== 'object') summary = {};
+            const keyFindings = Array.isArray(summary.keyFindings) ? summary.keyFindings : [];
+            const recommendations = Array.isArray(summary.recommendations) ? summary.recommendations : [];
 
-    resultsContainer.innerHTML = `
-        ${createExecutiveSummaryCard(sa.executiveSummary || {})}
-        ${createUserCentricAnalysisCard(sa.userCentricAnalysis || {})}
-        ${createKeywordsCard(sa.keywords || {})}
-        ${createCompetitorsCard(sa.competitors || {})}
-        ${createContentGuideCard(sa.contentGuide || {})}
-        ${createFinalPromptCard(fp)}
-    `;
-}
+            return `
+            <div class="result-card">
+                <h2>📊 خلاصه مدیریتی</h2>
+                <h3>یافته‌های کلیدی:</h3>
+                <ul>${keyFindings.map(item => `<li>${item}</li>`).join('')}</ul>
+                <h3>توصیه‌ها:</h3>
+                <ul>${recommendations.map(item => `<li>${item}</li>`).join('')}</ul>
+            </div>
+            `;
+        }
 
-function createExecutiveSummaryCard(summary) {
-    const keyFindings = summary.keyFindings || [];
-    const recommendations = summary.recommendations || [];
-    return `
-    <div class="result-card">
-        <h2>📊 خلاصه مدیریتی</h2>
-        <h3>یافته‌های کلیدی:</h3>
-        <ul>${keyFindings.map(item => `<li>${item}</li>`).join('')}</ul>
-        <h3>توصیه‌ها:</h3>
-        <ul>${recommendations.map(item => `<li>${item}</li>`).join('')}</ul>
-    </div>
-    `;
-}
+        function createUserCentricAnalysisCard(analysis) {
+            if (!analysis || !analysis.userIntent) return '';
+            return `
+            <div class="result-card">
+                <h2>🧠 تحلیل کاربرمحور (هسته استراتژی)</h2>
+                <h3>قصد کاربر (User Intent)</h3>
+                <p><strong>قصد اصلی:</strong> ${analysis.userIntent.primaryIntent || ''}</p>
+                <p><strong>قصدهای فرعی:</strong></p>
+                <ul>${(analysis.userIntent.secondaryIntents || []).map(item => `<li>${item}</li>`).join('')}</ul>
+                <p><strong>سوالات پنهان کاربر:</strong></p>
+                <ul>${(analysis.userIntent.unspokenQuestions || []).map(item => `<li>${item}</li>`).join('')}</ul>
 
-function createUserCentricAnalysisCard(analysis) {
-    if (!analysis.userIntent) return '';
-    return `
-    <div class="result-card">
-        <h2>🧠 تحلیل کاربرمحور (هسته استراتژی)</h2>
-        <h3>قصد کاربر (User Intent)</h3>
-        <p><strong>قصد اصلی:</strong> ${analysis.userIntent.primaryIntent || ''}</p>
-        <p><strong>قصدهای فرعی:</strong></p>
-        <ul>${(analysis.userIntent.secondaryIntents || []).map(item => `<li>${item}</li>`).join('')}</ul>
-        <p><strong>سوالات پنهان کاربر:</strong></p>
-        <ul>${(analysis.userIntent.unspokenQuestions || []).map(item => `<li>${item}</li>`).join('')}</ul>
-        <h3>استراتژی سیگنال‌های اعتماد (E-E-A-T)</h3>
-        <ul>
-            <li><strong>تجربه (Experience):</strong> ${analysis.trustSignalsStrategy?.E || ''}</li>
-            <li><strong>تخصص (Expertise):</strong> ${analysis.trustSignalsStrategy?.E2 || ''}</li>
-            <li><strong>اعتبار (Authoritativeness):</strong> ${analysis.trustSignalsStrategy?.A || ''}</li>
-            <li><strong>اعتماد (Trustworthiness):</strong> ${analysis.trustSignalsStrategy?.T || ''}</li>
-        </ul>
-    </div>
-    `;
-}
+                <h3>استراتژی سیگنال‌های اعتماد (E-E-A-T)</h3>
+                <ul>
+                    <li><strong>تجربه (Experience):</strong> ${analysis.trustSignalsStrategy?.E || ''}</li>
+                    <li><strong>تخصص (Expertise):</strong> ${analysis.trustSignalsStrategy?.E2 || ''}</li>
+                    <li><strong>اعتبار (Authoritativeness):</strong> ${analysis.trustSignalsStrategy?.A || ''}</li>
+                    <li><strong>اعتماد (Trustworthiness):</strong> ${analysis.trustSignalsStrategy?.T || ''}</li>
+                </ul>
+            </div>
+            `;
+        }
 
-function createKeywordsCard(keywords) {
-    const mainKeywordsTable = (keywords.mainKeywords || []).length > 0 ? `
-        <table>
-            <thead><tr><th>کلمه کلیدی اصلی</th><th>حجم جستجو</th><th>رقابت</th></tr></thead>
-            <tbody>
-                ${(keywords.mainKeywords || []).map(k => `<tr><td>${k.keyword}</td><td>${k.searchVolume || 'N/A'}</td><td>${k.competition || 'N/A'}</td></tr>`).join('')}
-            </tbody>
-        </table>` : '<p>کلمه کلیدی اصلی یافت نشد.</p>';
-    return `
-    <div class="result-card">
-        <h2>🔑 تحلیل کلمات کلیدی</h2>
-        <h3>کلمات کلیدی اصلی</h3>
-        ${mainKeywordsTable}
-        <h3>کلمات کلیدی فرعی</h3>
-        <ul>${(keywords.secondaryKeywords || []).map(k => `<li>${k.keyword}</li>`).join('')}</ul>
-        <h3>کلمات کلیدی طولانی (Long-tail)</h3>
-        <ul>${(keywords.longTailKeywords || []).map(k => `<li>${k}</li>`).join('')}</ul>
-    </div>
-    `;
-}
+        function createKeywordsCard(keywords) {
+            if (!keywords) keywords = {};
+            const mainKeywordsTable = (keywords.mainKeywords || []).length > 0 ? `
+                <table>
+                    <thead><tr><th>کلمه کلیدی اصلی</th><th>حجم جستجو</th><th>رقابت</th></tr></thead>
+                    <tbody>
+                        ${(keywords.mainKeywords || []).map(k => `<tr><td>${k.keyword}</td><td>${k.searchVolume || 'N/A'}</td><td>${k.competition || 'N/A'}</td></tr>`).join('')}
+                    </tbody>
+                </table>` : '<p>کلمه کلیدی اصلی یافت نشد.</p>';
 
-function createCompetitorsCard(competitors) {
-    return `
-    <div class="result-card">
-        <h2>🏆 تحلیل رقبا</h2>
-        <p><strong>سطح رقابت:</strong> ${competitors.marketAnalysis?.competitionLevel || ''}</p>
-        <h3>فرصت‌های استراتژیک:</h3>
-        <ul>${(competitors.marketAnalysis?.opportunities || []).map(op => `<li>${op}</li>`).join('')}</ul>
-        <h3>لیست رقبای برتر:</h3>
-        ${(competitors.list || []).length > 0 ? `<ul>${competitors.list.map(c => `<li><a href="${c.url}" target="_blank">${c.name}</a></li>`).join('')}</ul>` : '<p>هیچ رقیب مستقیمی در نتایج یافت نشد.</p>'}
-    </div>
-    `;
-}
+            return `
+            <div class="result-card">
+                <h2>🔑 تحلیل کلمات کلیدی</h2>
+                <h3>کلمات کلیدی اصلی</h3>
+                ${mainKeywordsTable}
+                <h3>کلمات کلیدی فرعی</h3>
+                <ul>${(keywords.secondaryKeywords || []).map(k => `<li>${k.keyword}</li>`).join('')}</ul>
+                <h3>کلمات کلیدی طولانی (Long-tail)</h3>
+                <ul>${(keywords.longTailKeywords || []).map(k => `<li>${k}</li>`).join('')}</ul>
+            </div>
+            `;
+        }
 
-function createContentGuideCard(guide) {
-    const sections = guide.structure?.mainBody?.sections?.map(s => `<li>${s.title}</li>`).join('') || '';
-    return `
-    <div class="result-card">
-        <h2>📝 راهنمای تولید محتوا</h2>
-        <h3>استراتژی محتوا</h3>
-        <p><strong>عنوان پیشنهادی:</strong> ${guide.contentStrategy?.title || ''}</p>
-        <p><strong>توضیحات متا:</strong> ${guide.contentStrategy?.metaDescription || ''}</p>
-        <h3>ساختار مقاله (${guide.structure?.totalWordCount || 0} کلمه)</h3>
-        <ul>
-            <li><strong>مقدمه:</strong> ${guide.structure?.introduction?.purpose || ''}</li>
-            <li><strong>بدنه اصلی:</strong><ul>${sections}</ul></li>
-            <li><strong>نتیجه‌گیری:</strong> ${guide.structure?.conclusion?.purpose || ''}</li>
-        </ul>
-        <p><strong>فراخوان به عمل (CTA):</strong> ${guide.structure?.conclusion?.callToAction || ''}</p>
-    </div>
-    `;
-}
+        function createCompetitorsCard(competitors) {
+            if (!competitors) competitors = {};
+            return `
+            <div class="result-card">
+                <h2>🏆 تحلیل رقبا</h2>
+                <p><strong>سطح رقابت:</strong> ${competitors.marketAnalysis?.competitionLevel || ''}</p>
+                <h3>فرصت‌های استراتژیک:</h3>
+                <ul>${(competitors.marketAnalysis?.opportunities || []).map(op => `<li>${op}</li>`).join('')}</ul>
+                <h3>لیست رقبای برتر:</h3>
+                ${(competitors.list || []).length > 0 ? `<ul>${competitors.list.map(c => `<li><a href="${c.url}" target="_blank">${c.name}</a></li>`).join('')}</ul>` : '<p>هیچ رقیب مستقیمی در نتایج یافت نشد.</p>'}
+            </div>
+            `;
+        }
 
-function createFinalPromptCard(promptText) {
-    return `
-    <div class="result-card">
-        <h2>🤖 پرامپت نهایی برای هوش مصنوعی</h2>
-        <pre><code>${promptText}</code></pre>
-    </div>
-    `;
-}
-</script>
+        function createContentGuideCard(guide) {
+            if (!guide) guide = {};
+            const sections = guide.structure?.mainBody?.sections?.map(s => `<li>${s.title}</li>`).join('') || '';
+            return `
+            <div class="result-card">
+                <h2>📝 راهنمای تولید محتوا</h2>
+                <h3>استراتژی محتوا</h3>
+                <p><strong>عنوان پیشنهادی:</strong> ${guide.contentStrategy?.title || ''}</p>
+                <p><strong>توضیحات متا:</strong> ${guide.contentStrategy?.metaDescription || ''}</p>
+                <h3>ساختار مقاله (${guide.structure?.totalWordCount || 0} کلمه)</h3>
+                <ul>
+                    <li><strong>مقدمه:</strong> ${guide.structure?.introduction?.purpose || ''}</li>
+                    <li><strong>بدنه اصلی:</strong><ul>${sections}</ul></li>
+                    <li><strong>نتیجه‌گیری:</strong> ${guide.structure?.conclusion?.purpose || ''}</li>
+                </ul>
+                <p><strong>فراخوان به عمل (CTA):</strong> ${guide.structure?.conclusion?.callToAction || ''}</p>
+            </div>
+            `;
+        }
+
+        function createFinalPromptCard(promptText) {
+            return `
+            <div class="result-card">
+                <h2>🤖 پرامپت نهایی برای هوش مصنوعی</h2>
+                <pre><code>${promptText}</code></pre>
+            </div>
+            `;
+        }
+    </script>
 </body>
 </html>
