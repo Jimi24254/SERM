@@ -7,7 +7,6 @@
 function generateFinalPrompt(topic, unifiedResult) {
   const guide = unifiedResult.contentGuide;
   if (!guide || !guide.contentStrategy || !guide.structure) {
-    // بازگشت یک پرامپت پیش‌فرض در صورت عدم وجود راهنمای محتوا
     return {
       prompt: `یک مقاله کامل و جامع درباره "${topic}" به صورت کد HTML بنویس.`,
       metadata: { generatedFor: topic, targetModel: 'gemini-2.5-pro', language: 'fa', createdAt: new Date().toISOString() }
@@ -17,19 +16,19 @@ function generateFinalPrompt(topic, unifiedResult) {
   const mainBodySections = guide.structure.mainBody.sections.map(s => `<li>${s.title}</li>`).join('');
   const mainKeywords = unifiedResult.keywords.mainKeywords.map(k => k.keyword).join(', ');
 
-  // پرامپت جدید با دستورالعمل دقیق برای تولید خروجی HTML
+  // (اصلاح شده) پرامپت با تگ‌های HTML صحیح و رفع اشتباه تایپی
   const promptText = `
-**وظیفه اصلی:** تو یک نویسنده محتوay سئو متخصص هستی. یک مقاله کامل، جامع و سئو شده درباره "${topic}" بنویس.
+**وظیفه اصلی:** تو یک نویسنده محتوای سئو متخصص هستی. یک مقاله کامل، جامع و سئو شده درباره "${topic}" بنویس.
 
 **مهمترین دستورالعمل: خروجی نهایی باید یک کد HTML کامل و تمیز باشد. از هیچ فرمت دیگری مانند Markdown استفاده نکن. تمام متن باید داخل تگ‌های HTML مناسب قرار گیرد.**
 
 **جزئیات محتوا:**
-1.  **عنوان اصلی (تگ <h1>):** ${guide.contentStrategy.title}
+1.  **عنوان اصلی (تگ \`<h1>\`):** ${guide.contentStrategy.title}
 2.  **تعداد کلمات:** حدود ${guide.structure.totalWordCount || 2500} کلمه.
 3.  **کلمات کلیدی اصلی:** کلمات "${mainKeywords}" را به صورت طبیعی در متن، به خصوص در سرفصل‌ها و پاراگراف اول, به کار ببر.
 4.  **ساختار مقاله:**
-    *   **مقدمه (تگ <p>):** با یک قلاب قوی شروع کن که به ${guide.structure.introduction.purpose} بپردازد و اعتماد اولیه کاربر را جلب کند.
-    *   **بدنه اصلی:** از تگ‌های <h2> برای هر یک از سرفصل‌های اصلی زیر استفاده کن. برای زیرمجموعه‌ها از <h3> استفاده کن.
+    *   **مقدمه (تگ \`<p>\`):** با یک قلاب قوی شروع کن که به ${guide.structure.introduction.purpose} بپردازد و اعتماد اولیه کاربر را جلب کند.
+    *   **بدنه اصلی:** از تگ‌های \`<h2>\` برای هر یک از سرفصل‌های اصلی زیر استفاده کن. برای زیرمجموعه‌ها از \`<h3>\` استفاده کن.
         <ul>
             ${mainBodySections}
         </ul>
@@ -39,7 +38,7 @@ function generateFinalPrompt(topic, unifiedResult) {
 *   برای پاراگراف‌ها از تگ \`<p>\` استفاده کن.
 *   برای لیست‌های شماره‌دار از \`<ol>\` و \`<li>\` و برای لیست‌های نقطه‌ای از \`<ul>\` و \`<li>\` استفاده کن.
 *   برای تاکید روی کلمات مهم، از تگ \`<strong>\` (برای بولد کردن) و \`<em>\` (برای ایتالیک) استفاده کن.
-*   **3 منبع معتبر بین‌المللی:** در انتهای مقاله، سه منبع معتبر (مانند مقالات سایت‌های Moz, Ahrefs, Search Engine Journal) را به صورت یک لیست \`<ul>\` با لینک‌های nofollow اضافه کن. مثال: \`<li><a href="https://example.com" rel="nofollow noopener noreferrer" target="_blank">عنوان منبع</a>: توضیح کوتاه</li>\`
+*   **3 منبع معتبر بین‌المللی:** در انتهای مقاله، سه منبع معتبر (مانند مقالات سایت‌های معتبر در زمینه روانشناسی) را به صورت یک لیست \`<ul>\` با لینک‌های nofollow اضافه کن. مثال: \`<li><a href="https://example.com" rel="nofollow noopener noreferrer" target="_blank">عنوان منبع</a>: توضیح کوتاه درباره چرایی اعتبار این منبع.</li>\`
 
 **شروع کن! فقط کد HTML را ارائه بده.**
 `.trim();
@@ -55,15 +54,12 @@ function generateFinalPrompt(topic, unifiedResult) {
   };
 }
 
+
 /**
  * یک خلاصه مدیریتی برای نمایش سریع نتایج کلیدی تولید می‌کند.
- * @param {string} topic - موضوع اصلی تحلیل.
- * @param {object} unifiedResult - نتیجه تحلیل یکپارچه از هوش مصنوعی.
- * @param {Array} realCompetitors - لیست رقبای واقعی از SerpApi.
- * @returns {object} - آبجکت خلاصه مدیریتی.
+ * (این تابع بدون تغییر است و به درستی کار می‌کند)
  */
 function generateExecutiveSummary(topic, unifiedResult, realCompetitors) {
-  // این بخش برای سازگاری با تحلیل کاربرمحور جدید به‌روز می‌شود
   const userCentricSummary = (unifiedResult.userCentricAnalysis && unifiedResult.userCentricAnalysis.userIntent) ? 
     `قصد اصلی کاربر: ${unifiedResult.userCentricAnalysis.userIntent.primaryIntent}` :
     "تحلیل قصد کاربر انجام نشد.";
