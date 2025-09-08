@@ -190,6 +190,8 @@
                     throw new Error(errorData.error || 'خطایی در سرور رخ داد.');
                 }
                 const result = await response.json();
+                // برای دیباگ: لاگ دیتا رو اینجا اضافه کن تا ببینیم چی میاد
+                console.log('API Response Data:', result.data);
                 displayResults(result.data);
             } catch (error) {
                 console.error('Error during analysis:', error);
@@ -202,8 +204,8 @@
         });
 
         function displayResults(data) {
-            const sa = data.strategicAnalysis || {};
-            const fp = data.finalPromptForWriter || '';
+            const sa = data?.strategicAnalysis || {};
+            const fp = data?.finalPromptForWriter || '';
 
             resultsContainer.innerHTML = `
                 ${createExecutiveSummaryCard(sa.executiveSummary)}
@@ -216,9 +218,8 @@
         }
 
         function createExecutiveSummaryCard(summary) {
-            if (!summary || typeof summary !== 'object') summary = {};
-            const keyFindings = Array.isArray(summary.keyFindings) ? summary.keyFindings : [];
-            const recommendations = Array.isArray(summary.recommendations) ? summary.recommendations : [];
+            const keyFindings = Array.isArray(summary?.keyFindings) ? summary.keyFindings : [];
+            const recommendations = Array.isArray(summary?.recommendations) ? summary.recommendations : [];
 
             return `
             <div class="result-card">
@@ -232,16 +233,16 @@
         }
 
         function createUserCentricAnalysisCard(analysis) {
-            if (!analysis || !analysis.userIntent) return '';
+            if (!analysis?.userIntent) return '';
             return `
             <div class="result-card">
                 <h2>🧠 تحلیل کاربرمحور (هسته استراتژی)</h2>
                 <h3>قصد کاربر (User Intent)</h3>
-                <p><strong>قصد اصلی:</strong> ${analysis.userIntent.primaryIntent || ''}</p>
+                <p><strong>قصد اصلی:</strong> ${analysis.userIntent?.primaryIntent || ''}</p>
                 <p><strong>قصدهای فرعی:</strong></p>
-                <ul>${(analysis.userIntent.secondaryIntents || []).map(item => `<li>${item}</li>`).join('')}</ul>
+                <ul>${Array.isArray(analysis.userIntent?.secondaryIntents) ? analysis.userIntent.secondaryIntents.map(item => `<li>${item}</li>`).join('') : ''}</ul>
                 <p><strong>سوالات پنهان کاربر:</strong></p>
-                <ul>${(analysis.userIntent.unspokenQuestions || []).map(item => `<li>${item}</li>`).join('')}</ul>
+                <ul>${Array.isArray(analysis.userIntent?.unspokenQuestions) ? analysis.userIntent.unspokenQuestions.map(item => `<li>${item}</li>`).join('') : ''}</ul>
 
                 <h3>استراتژی سیگنال‌های اعتماد (E-E-A-T)</h3>
                 <ul>
@@ -255,12 +256,11 @@
         }
 
         function createKeywordsCard(keywords) {
-            if (!keywords) keywords = {};
-            const mainKeywordsTable = (keywords.mainKeywords || []).length > 0 ? `
+            const mainKeywordsTable = Array.isArray(keywords?.mainKeywords) && keywords.mainKeywords.length > 0 ? `
                 <table>
                     <thead><tr><th>کلمه کلیدی اصلی</th><th>حجم جستجو</th><th>رقابت</th></tr></thead>
                     <tbody>
-                        ${(keywords.mainKeywords || []).map(k => `<tr><td>${k.keyword}</td><td>${k.searchVolume || 'N/A'}</td><td>${k.competition || 'N/A'}</td></tr>`).join('')}
+                        ${keywords.mainKeywords.map(k => `<tr><td>${k.keyword || ''}</td><td>${k.searchVolume || 'N/A'}</td><td>${k.competition || 'N/A'}</td></tr>`).join('')}
                     </tbody>
                 </table>` : '<p>کلمه کلیدی اصلی یافت نشد.</p>';
 
@@ -270,43 +270,42 @@
                 <h3>کلمات کلیدی اصلی</h3>
                 ${mainKeywordsTable}
                 <h3>کلمات کلیدی فرعی</h3>
-                <ul>${(keywords.secondaryKeywords || []).map(k => `<li>${k.keyword}</li>`).join('')}</ul>
+                <ul>${Array.isArray(keywords?.secondaryKeywords) ? keywords.secondaryKeywords.map(k => `<li>${k.keyword || ''}</li>`).join('') : ''}</ul>
                 <h3>کلمات کلیدی طولانی (Long-tail)</h3>
-                <ul>${(keywords.longTailKeywords || []).map(k => `<li>${k}</li>`).join('')}</ul>
+                <ul>${Array.isArray(keywords?.longTailKeywords) ? keywords.longTailKeywords.map(k => `<li>${k || ''}</li>`).join('') : ''}</ul>
             </div>
             `;
         }
 
         function createCompetitorsCard(competitors) {
-            if (!competitors) competitors = {};
             return `
             <div class="result-card">
                 <h2>🏆 تحلیل رقبا</h2>
-                <p><strong>سطح رقابت:</strong> ${competitors.marketAnalysis?.competitionLevel || ''}</p>
+                <p><strong>سطح رقابت:</strong> ${competitors?.marketAnalysis?.competitionLevel || ''}</p>
                 <h3>فرصت‌های استراتژیک:</h3>
-                <ul>${(competitors.marketAnalysis?.opportunities || []).map(op => `<li>${op}</li>`).join('')}</ul>
+                <ul>${Array.isArray(competitors?.marketAnalysis?.opportunities) ? competitors.marketAnalysis.opportunities.map(op => `<li>${op || ''}</li>`).join('') : ''}</ul>
                 <h3>لیست رقبای برتر:</h3>
-                ${(competitors.list || []).length > 0 ? `<ul>${competitors.list.map(c => `<li><a href="${c.url}" target="_blank">${c.name}</a></li>`).join('')}</ul>` : '<p>هیچ رقیب مستقیمی در نتایج یافت نشد.</p>'}
+                ${Array.isArray(competitors?.list) && competitors.list.length > 0 ? `<ul>${competitors.list.map(c => `<li><a href="${c.url || ''}" target="_blank">${c.name || ''}</a></li>`).join('')}</ul>` : '<p>هیچ رقیب مستقیمی در نتایج یافت نشد.</p>'}
             </div>
             `;
         }
 
         function createContentGuideCard(guide) {
-            if (!guide) guide = {};
-            const sections = guide.structure?.mainBody?.sections?.map(s => `<li>${s.title}</li>`).join('') || '';
+            const sections = Array.isArray(guide?.structure?.mainBody?.sections) ? guide.structure.mainBody.sections.map(s => `<li>${s.title || ''}</li>`).join('') : '';
+
             return `
             <div class="result-card">
                 <h2>📝 راهنمای تولید محتوا</h2>
                 <h3>استراتژی محتوا</h3>
-                <p><strong>عنوان پیشنهادی:</strong> ${guide.contentStrategy?.title || ''}</p>
-                <p><strong>توضیحات متا:</strong> ${guide.contentStrategy?.metaDescription || ''}</p>
-                <h3>ساختار مقاله (${guide.structure?.totalWordCount || 0} کلمه)</h3>
+                <p><strong>عنوان پیشنهادی:</strong> ${guide?.contentStrategy?.title || ''}</p>
+                <p><strong>توضیحات متا:</strong> ${guide?.contentStrategy?.metaDescription || ''}</p>
+                <h3>ساختار مقاله (${guide?.structure?.totalWordCount || 0} کلمه)</h3>
                 <ul>
-                    <li><strong>مقدمه:</strong> ${guide.structure?.introduction?.purpose || ''}</li>
+                    <li><strong>مقدمه:</strong> ${guide?.structure?.introduction?.purpose || ''}</li>
                     <li><strong>بدنه اصلی:</strong><ul>${sections}</ul></li>
-                    <li><strong>نتیجه‌گیری:</strong> ${guide.structure?.conclusion?.purpose || ''}</li>
+                    <li><strong>نتیجه‌گیری:</strong> ${guide?.structure?.conclusion?.purpose || ''}</li>
                 </ul>
-                <p><strong>فراخوان به عمل (CTA):</strong> ${guide.structure?.conclusion?.callToAction || ''}</p>
+                <p><strong>فراخوان به عمل (CTA):</strong> ${guide?.structure?.conclusion?.callToAction || ''}</p>
             </div>
             `;
         }
@@ -315,7 +314,7 @@
             return `
             <div class="result-card">
                 <h2>🤖 پرامپت نهایی برای هوش مصنوعی</h2>
-                <pre><code>${promptText}</code></pre>
+                <pre><code>${promptText || ''}</code></pre>
             </div>
             `;
         }
